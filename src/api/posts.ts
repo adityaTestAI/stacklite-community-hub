@@ -3,13 +3,14 @@ import { connectToDatabase } from '@/lib/mongodb';
 import Post from '@/models/Post';
 import { createOrUpdateTags } from './tags';
 import { Post as PostType } from '@/types';
+import mongoose from 'mongoose';
 
 // Get all posts
 export async function getAllPosts(): Promise<PostType[]> {
   try {
     await connectToDatabase();
-    const query = Post.find({}).sort({ createdAt: -1 });
-    const posts = await query.exec();
+    // Use proper model reference and cast to any to bypass TypeScript's union type check
+    const posts = await (Post as any).find({}).sort({ createdAt: -1 }).exec();
     
     return posts.map(post => ({
       id: post._id.toString(),
@@ -40,8 +41,8 @@ export async function getAllPosts(): Promise<PostType[]> {
 export async function getPostById(id: string): Promise<PostType | null> {
   try {
     await connectToDatabase();
-    const query = Post.findById(id);
-    const post = await query.exec();
+    // Use proper model reference and cast to any
+    const post = await (Post as any).findById(id).exec();
     if (!post) return null;
     
     // Increment view count
@@ -88,7 +89,8 @@ export async function createPost(postData: Omit<PostType, 'id' | 'createdAt' | '
       answers: []
     };
     
-    const post = await Post.create(newPost);
+    // Cast to any to bypass TypeScript's union type check
+    const post = await (Post as any).create(newPost);
     
     return {
       id: post._id.toString(),
@@ -118,13 +120,12 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
       await createOrUpdateTags(postData.tags);
     }
     
-    const query = Post.findByIdAndUpdate(
+    // Cast to any to bypass TypeScript's union type check
+    const post = await (Post as any).findByIdAndUpdate(
       id,
       { ...postData },
       { new: true }
-    );
-    
-    const post = await query.exec();
+    ).exec();
     
     if (!post) return null;
     
@@ -157,8 +158,8 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
 export async function deletePost(id: string): Promise<boolean> {
   try {
     await connectToDatabase();
-    const query = Post.findByIdAndDelete(id);
-    const result = await query.exec();
+    // Cast to any to bypass TypeScript's union type check
+    const result = await (Post as any).findByIdAndDelete(id).exec();
     return !!result;
   } catch (error) {
     console.error(`Error deleting post ${id}:`, error);
