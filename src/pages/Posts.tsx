@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import PostsList from "@/components/post/PostsList";
 import { Post, Tag } from "@/types";
 import { useAuth } from "@/context/AuthContext";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 // Mock data for demonstration
 const MOCK_POSTS: Post[] = [
@@ -83,6 +85,16 @@ const MOCK_TAGS: Tag[] = [
   { id: "8", name: "generics", count: 31 }
 ];
 
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
+
 const Posts = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
@@ -98,7 +110,19 @@ const Posts = () => {
       try {
         // Simulate API call
         await new Promise(resolve => setTimeout(resolve, 500));
-        setPosts(MOCK_POSTS);
+        
+        // Check if we have a new post in localStorage
+        const newPostRaw = localStorage.getItem("newPost");
+        if (newPostRaw) {
+          const newPost = JSON.parse(newPostRaw);
+          // Add the new post to our mock posts
+          setPosts([newPost, ...MOCK_POSTS]);
+          // Clear the localStorage after using it
+          localStorage.removeItem("newPost");
+        } else {
+          setPosts(MOCK_POSTS);
+        }
+        
         setPopularTags(MOCK_TAGS);
       } catch (error) {
         console.error("Error fetching posts:", error);
@@ -121,6 +145,10 @@ const Posts = () => {
     }
   }, [location.search]);
 
+  const handleAskQuestion = () => {
+    navigate("/posts/ask");
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -130,10 +158,29 @@ const Posts = () => {
       className="container mx-auto py-6 px-4"
     >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-        <div>
+        <motion.div
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
           <h1 className="text-2xl font-bold">Posts</h1>
           <p className="text-muted-foreground">Browse questions and answers from the community</p>
-        </div>
+        </motion.div>
+        
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <Button 
+            variant="default" 
+            onClick={handleAskQuestion}
+            className="flex items-center gap-2"
+          >
+            <Plus size={16} />
+            Ask a Question
+          </Button>
+        </motion.div>
       </div>
       
       {loading ? (
@@ -147,7 +194,13 @@ const Posts = () => {
           </div>
         </div>
       ) : (
-        <PostsList posts={posts} popularTags={popularTags} />
+        <motion.div
+          variants={container}
+          initial="hidden"
+          animate="show"
+        >
+          <PostsList posts={posts} popularTags={popularTags} />
+        </motion.div>
       )}
     </motion.div>
   );

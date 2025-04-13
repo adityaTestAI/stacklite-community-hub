@@ -6,6 +6,7 @@ import TagBadge from "@/components/tag/TagBadge";
 import { Eye, MessageSquare, ThumbsUp } from "lucide-react";
 import { Post } from "@/types";
 import { formatDistanceToNow } from "date-fns";
+import TagIcon from "@/components/tag/TagIcon";
 
 interface PostCardProps {
   post: Post;
@@ -27,7 +28,15 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
             </p>
             <div className="flex flex-wrap gap-2 mt-2">
               {post.tags.map((tag) => (
-                <TagBadge key={tag} name={tag} />
+                <div key={tag} className="flex items-center">
+                  <TagBadge
+                    name={tag}
+                    className="flex items-center gap-1.5"
+                  >
+                    <TagIcon tagName={tag} className="h-3.5 w-3.5 mr-1" />
+                    {tag}
+                  </TagBadge>
+                </div>
               ))}
             </div>
           </div>

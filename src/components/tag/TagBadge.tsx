@@ -7,13 +7,15 @@ interface TagBadgeProps {
   count?: number;
   className?: string;
   onClick?: () => void;
+  children?: React.ReactNode;
 }
 
 const TagBadge: React.FC<TagBadgeProps> = ({ 
   name, 
   count, 
   className,
-  onClick
+  onClick,
+  children
 }) => {
   return (
     <button
@@ -25,7 +27,7 @@ const TagBadge: React.FC<TagBadgeProps> = ({
       )}
       onClick={onClick}
     >
-      {name}
+      {children || name}
       {count !== undefined && (
         <span className="ml-1 text-muted-foreground">×{count}</span>
       )}

@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/types";
 import { Search } from "lucide-react";
+import { motion } from "framer-motion";
+import TagIcon from "@/components/tag/TagIcon";
 
 // Mock data (in a real app, this would come from an API)
 const MOCK_TAGS: Tag[] = [
@@ -28,6 +30,22 @@ const MOCK_TAGS: Tag[] = [
   { id: "19", name: "java", count: 121 },
   { id: "20", name: "c#", count: 110 }
 ];
+
+const container = {
+  hidden: { opacity: 0 },
+  show: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.3
+    }
+  }
+};
+
+const item = {
+  hidden: { opacity: 0, y: 20 },
+  show: { opacity: 1, y: 0 }
+};
 
 const Tags = () => {
   const [tags, setTags] = useState<Tag[]>([]);
@@ -57,10 +75,28 @@ const Tags = () => {
   );
 
   return (
-    <div className="container mx-auto py-6 px-4">
-      <h1 className="text-2xl font-bold mb-6">Tags</h1>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.5 }}
+      className="container mx-auto py-6 px-4"
+    >
+      <motion.h1 
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="text-2xl font-bold mb-6"
+      >
+        Tags
+      </motion.h1>
       
-      <div className="mb-6 max-w-md">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+        className="mb-6 max-w-md"
+      >
         <div className="relative">
           <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
           <Input
@@ -70,42 +106,58 @@ const Tags = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-      </div>
+      </motion.div>
 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {[...Array(8)].map((_, i) => (
-            <div key={i} className="animate-pulse h-24 bg-secondary rounded"></div>
+            <motion.div 
+              key={i} 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, delay: i * 0.05 }}
+              className="animate-pulse h-24 bg-secondary rounded"
+            ></motion.div>
           ))}
         </div>
       ) : filteredTags.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <motion.div 
+          variants={container}
+          initial="hidden"
+          animate="show"
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+        >
           {filteredTags.map((tag) => (
-            <Link
-              key={tag.id}
-              to={`/posts?tag=${tag.name}`}
-              className="border rounded-lg p-4 hover:border-primary/50 hover:bg-primary/5 transition-colors"
-            >
-              <div className="flex items-start justify-between">
+            <motion.div key={tag.id} variants={item}>
+              <Link
+                to={`/posts?tag=${tag.name}`}
+                className="border rounded-lg p-4 hover:border-primary/50 hover:bg-primary/5 transition-colors flex items-start"
+              >
+                <TagIcon tagName={tag.name} className="mr-3 mt-1" />
                 <div>
                   <h3 className="font-medium text-lg mb-1">{tag.name}</h3>
                   <p className="text-sm text-muted-foreground">
                     {tag.count} {tag.count === 1 ? "post" : "posts"}
                   </p>
                 </div>
-              </div>
-            </Link>
+              </Link>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       ) : (
-        <div className="text-center py-12">
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-center py-12"
+        >
           <h3 className="text-lg font-medium mb-2">No tags found</h3>
           <p className="text-muted-foreground">
             Try adjusting your search to find what you're looking for.
           </p>
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 };
 

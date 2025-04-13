@@ -59,8 +59,26 @@ const AskQuestion = () => {
 
     try {
       // In a real app, we would save to database
-      // For now, just simulate success
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // For mock data, save to localStorage
+      const newPost = {
+        id: `new-${Date.now()}`,
+        title,
+        content,
+        authorId: currentUser?.uid || "anonymous",
+        authorName: currentUser?.displayName || "Anonymous User",
+        createdAt: new Date().toISOString(),
+        tags,
+        upvotes: 0,
+        views: 1,
+        answers: []
+      };
+      
+      // Store in localStorage to be picked up by the Posts page
+      localStorage.setItem("newPost", JSON.stringify(newPost));
+      
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
       toast({
         title: "Success!",
         description: "Your question has been posted.",
@@ -85,10 +103,22 @@ const AskQuestion = () => {
       transition={{ duration: 0.3 }}
       className="container mx-auto py-8 px-4"
     >
-      <h1 className="text-2xl font-bold mb-6">Ask a Question</h1>
+      <motion.h1 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="text-2xl font-bold mb-6"
+      >
+        Ask a Question
+      </motion.h1>
       
       <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl">
-        <div className="space-y-2">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="space-y-2"
+        >
           <Label htmlFor="title">Title</Label>
           <Input
             id="title"
@@ -98,9 +128,14 @@ const AskQuestion = () => {
             className="w-full"
             required
           />
-        </div>
+        </motion.div>
         
-        <div className="space-y-2">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="space-y-2"
+        >
           <Label htmlFor="content">Details</Label>
           <Textarea
             id="content"
@@ -110,9 +145,14 @@ const AskQuestion = () => {
             className="min-h-[200px]"
             required
           />
-        </div>
+        </motion.div>
         
-        <div className="space-y-2">
+        <motion.div 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="space-y-2"
+        >
           <Label htmlFor="tags">Tags</Label>
           <div className="flex gap-2">
             <Input
@@ -140,15 +180,21 @@ const AskQuestion = () => {
             </div>
           )}
           <p className="text-xs text-muted-foreground">Add up to 5 tags to describe what your question is about</p>
-        </div>
+        </motion.div>
         
-        <Button 
-          type="submit" 
-          className="w-full md:w-auto"
-          disabled={submitting}
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.5 }}
         >
-          {submitting ? "Posting question..." : "Post Your Question"}
-        </Button>
+          <Button 
+            type="submit" 
+            className="w-full md:w-auto"
+            disabled={submitting}
+          >
+            {submitting ? "Posting question..." : "Post Your Question"}
+          </Button>
+        </motion.div>
       </form>
     </motion.div>
   );
