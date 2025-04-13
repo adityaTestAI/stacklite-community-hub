@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
+import { createPost } from "@/api/posts";
 
 const AskQuestion = () => {
   const { currentUser } = useAuth();
@@ -58,33 +59,24 @@ const AskQuestion = () => {
     setSubmitting(true);
 
     try {
-      // In a real app, we would save to database
-      // For mock data, save to localStorage
-      const newPost = {
-        id: `new-${Date.now()}`,
+      const newPost = await createPost({
         title,
         content,
         authorId: currentUser?.uid || "anonymous",
         authorName: currentUser?.displayName || "Anonymous User",
-        createdAt: new Date().toISOString(),
         tags,
         upvotes: 0,
-        views: 1,
-        answers: []
-      };
-      
-      // Store in localStorage to be picked up by the Posts page
-      localStorage.setItem("newPost", JSON.stringify(newPost));
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+        views: 1
+      });
       
       toast({
         title: "Success!",
         description: "Your question has been posted.",
       });
+      
       navigate("/posts");
     } catch (error) {
+      console.error("Error creating post:", error);
       toast({
         title: "Error",
         description: "Failed to post your question. Please try again.",

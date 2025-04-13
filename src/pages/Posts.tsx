@@ -7,83 +7,9 @@ import { Post, Tag } from "@/types";
 import { useAuth } from "@/context/AuthContext";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// Mock data for demonstration
-const MOCK_POSTS: Post[] = [
-  {
-    id: "1",
-    title: "How to optimize React performance with useCallback?",
-    content: "I'm trying to understand the best practices for optimizing React components using useCallback. When should I use it and when is it unnecessary?",
-    authorId: "user1",
-    authorName: "John Doe",
-    createdAt: "2023-05-15T10:30:00Z",
-    tags: ["react", "javascript", "hooks"],
-    upvotes: 24,
-    views: 156,
-    answers: [
-      {
-        id: "a1",
-        content: "useCallback is best used when you have functions that are passed as props to child components that rely on referential equality...",
-        authorId: "user2",
-        authorName: "Jane Smith",
-        createdAt: "2023-05-15T11:20:00Z",
-        upvotes: 12
-      }
-    ]
-  },
-  {
-    id: "2",
-    title: "Understanding TypeScript generics with multiple constraints",
-    content: "I'm trying to define a TypeScript generic that has multiple constraints. How can I define a type that extends multiple interfaces?",
-    authorId: "user3",
-    authorName: "Robert Johnson",
-    createdAt: "2023-05-14T15:45:00Z",
-    tags: ["typescript", "generics"],
-    upvotes: 18,
-    views: 123,
-    answers: []
-  },
-  {
-    id: "3",
-    title: "Best practices for MongoDB schema design",
-    content: "I'm designing a MongoDB schema for a blogging platform. Should I use embedded documents or references for comments and likes?",
-    authorId: "user4",
-    authorName: "Emily Clark",
-    createdAt: "2023-05-13T09:15:00Z",
-    tags: ["mongodb", "database", "schema-design"],
-    upvotes: 32,
-    views: 210,
-    answers: [
-      {
-        id: "a2",
-        content: "For a blogging platform, I would recommend using references for comments...",
-        authorId: "user5",
-        authorName: "Michael Brown",
-        createdAt: "2023-05-13T10:05:00Z",
-        upvotes: 8
-      },
-      {
-        id: "a3",
-        content: "It depends on your read/write patterns. If you read posts with comments frequently...",
-        authorId: "user1",
-        authorName: "John Doe",
-        createdAt: "2023-05-13T11:30:00Z",
-        upvotes: 15
-      }
-    ]
-  }
-];
-
-const MOCK_TAGS: Tag[] = [
-  { id: "1", name: "javascript", count: 352 },
-  { id: "2", name: "react", count: 245 },
-  { id: "3", name: "typescript", count: 187 },
-  { id: "4", name: "mongodb", count: 112 },
-  { id: "5", name: "database", count: 89 },
-  { id: "6", name: "hooks", count: 56 },
-  { id: "7", name: "schema-design", count: 43 },
-  { id: "8", name: "generics", count: 31 }
-];
+import { getAllPosts } from "@/api/posts";
+import { getAllTags } from "@/api/tags";
+import { useToast } from "@/hooks/use-toast";
 
 const container = {
   hidden: { opacity: 0 },
@@ -99,49 +25,46 @@ const Posts = () => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
   const [posts, setPosts] = useState<Post[]>([]);
   const [popularTags, setPopularTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // In a real app, we would fetch posts from an API
-    // For now, we'll use mock data
-    const fetchPosts = async () => {
+    const fetchData = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
+        setLoading(true);
         
-        // Check if we have a new post in localStorage
-        const newPostRaw = localStorage.getItem("newPost");
-        if (newPostRaw) {
-          const newPost = JSON.parse(newPostRaw);
-          // Add the new post to our mock posts
-          setPosts([newPost, ...MOCK_POSTS]);
-          // Clear the localStorage after using it
-          localStorage.removeItem("newPost");
-        } else {
-          setPosts(MOCK_POSTS);
-        }
+        // Fetch posts and tags in parallel
+        const [postsData, tagsData] = await Promise.all([
+          getAllPosts(),
+          getAllTags()
+        ]);
         
-        setPopularTags(MOCK_TAGS);
+        setPosts(postsData);
+        setPopularTags(tagsData);
       } catch (error) {
-        console.error("Error fetching posts:", error);
+        console.error("Error fetching data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load posts. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    fetchPosts();
-  }, []);
+    fetchData();
+  }, [toast]);
 
   // Check if we're coming from a tag page with a filter
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tagFilter = params.get("tag");
     if (tagFilter) {
-      // In a real app, we would filter posts by tag
-      // For the mock, we already have all posts, so we don't need to fetch again
       console.log(`Filtering by tag: ${tagFilter}`);
+      // The filtering is handled in the PostsList component
     }
   }, [location.search]);
 

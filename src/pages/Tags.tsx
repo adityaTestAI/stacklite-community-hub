@@ -3,33 +3,11 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/types";
-import { Search } from "lucide-react";
+import { Search, TagIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import TagIcon from "@/components/tag/TagIcon";
-
-// Mock data (in a real app, this would come from an API)
-const MOCK_TAGS: Tag[] = [
-  { id: "1", name: "javascript", count: 352 },
-  { id: "2", name: "react", count: 245 },
-  { id: "3", name: "typescript", count: 187 },
-  { id: "4", name: "mongodb", count: 112 },
-  { id: "5", name: "database", count: 89 },
-  { id: "6", name: "node.js", count: 178 },
-  { id: "7", name: "express", count: 134 },
-  { id: "8", name: "html", count: 267 },
-  { id: "9", name: "css", count: 221 },
-  { id: "10", name: "redux", count: 98 },
-  { id: "11", name: "hooks", count: 56 },
-  { id: "12", name: "schema-design", count: 43 },
-  { id: "13", name: "generics", count: 31 },
-  { id: "14", name: "next.js", count: 87 },
-  { id: "15", name: "vue.js", count: 76 },
-  { id: "16", name: "angular", count: 65 },
-  { id: "17", name: "php", count: 54 },
-  { id: "18", name: "python", count: 143 },
-  { id: "19", name: "java", count: 121 },
-  { id: "20", name: "c#", count: 110 }
-];
+import { getAllTags } from "@/api/tags";
+import { useToast } from "@/hooks/use-toast";
 
 const container = {
   hidden: { opacity: 0 },
@@ -51,24 +29,28 @@ const Tags = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // In a real app, we would fetch tags from an API
-    // For now, we'll use mock data
     const fetchTags = async () => {
       try {
-        // Simulate API call
-        await new Promise(resolve => setTimeout(resolve, 500));
-        setTags(MOCK_TAGS);
+        setLoading(true);
+        const tagsData = await getAllTags();
+        setTags(tagsData);
       } catch (error) {
         console.error("Error fetching tags:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load tags. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchTags();
-  }, []);
+  }, [toast]);
 
   const filteredTags = tags.filter((tag) =>
     tag.name.toLowerCase().includes(searchQuery.toLowerCase())
