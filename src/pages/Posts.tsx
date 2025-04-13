@@ -1,11 +1,10 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { motion } from "framer-motion";
 import PostsList from "@/components/post/PostsList";
 import { Post, Tag } from "@/types";
 import { useAuth } from "@/context/AuthContext";
-import { Plus } from "lucide-react";
 
 // Mock data for demonstration
 const MOCK_POSTS: Post[] = [
@@ -123,20 +122,18 @@ const Posts = () => {
   }, [location.search]);
 
   return (
-    <div className="container mx-auto py-6 px-4">
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
+      transition={{ duration: 0.3 }}
+      className="container mx-auto py-6 px-4"
+    >
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <div>
           <h1 className="text-2xl font-bold">Posts</h1>
           <p className="text-muted-foreground">Browse questions and answers from the community</p>
         </div>
-        
-        <Button 
-          onClick={() => navigate(currentUser ? "/posts/ask" : "/login")}
-          className="flex items-center gap-2"
-        >
-          <Plus size={18} />
-          Ask a Question
-        </Button>
       </div>
       
       {loading ? (
@@ -152,7 +149,7 @@ const Posts = () => {
       ) : (
         <PostsList posts={posts} popularTags={popularTags} />
       )}
-    </div>
+    </motion.div>
   );
 };
 

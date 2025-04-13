@@ -21,13 +21,15 @@ import {
   Moon,
   Sun,
   Menu,
-  X
+  X,
+  Plus
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { auth, signOut } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import AuthModal from "@/components/auth/AuthModal";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { motion } from "framer-motion";
 
 const Navbar: React.FC = () => {
   const { currentUser } = useAuth();
@@ -70,6 +72,22 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const handleAskQuestion = () => {
+    if (!currentUser) {
+      toast({
+        title: "Authentication required",
+        description: "You need to be logged in to ask a question.",
+        variant: "destructive",
+      });
+      navigate("/login");
+    } else {
+      navigate("/posts/ask");
+    }
+    if (isMobile) {
+      setMobileMenuOpen(false);
+    }
+  };
+
   return (
     <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur">
       <div className="container mx-auto px-4 py-3 flex items-center justify-between">
@@ -106,50 +124,49 @@ const Navbar: React.FC = () => {
             {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
           </Button>
           
+          <Button 
+            variant="default" 
+            onClick={handleAskQuestion}
+            className="hidden md:flex items-center gap-1"
+          >
+            <Plus size={16} />
+            Ask a Question
+          </Button>
+          
           {!isMobile ? (
             <>
               {currentUser ? (
-                <>
-                  <Button 
-                    variant="default" 
-                    onClick={() => navigate("/posts/ask")}
-                    className="hidden md:flex"
-                  >
-                    Ask a Question
-                  </Button>
-                  
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="rounded-full p-0 w-10 h-10">
-                        <Avatar>
-                          <AvatarImage src={currentUser.photoURL || undefined} />
-                          <AvatarFallback>
-                            {currentUser.displayName?.charAt(0) || currentUser.email?.charAt(0) || 'U'}
-                          </AvatarFallback>
-                        </Avatar>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem>
-                        <User className="mr-2 h-4 w-4" />
-                        <span>Profile</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate("/settings")}>
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>Settings</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={confirmLogout}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        <span>Logout</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="rounded-full p-0 w-10 h-10">
+                      <Avatar>
+                        <AvatarImage src={currentUser.photoURL || undefined} />
+                        <AvatarFallback>
+                          {currentUser.displayName?.charAt(0) || currentUser.email?.charAt(0) || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => navigate("/settings")}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={confirmLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Logout</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               ) : (
                 <Dialog open={authOpen} onOpenChange={setAuthOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="default">Login / Register</Button>
+                    <Button variant="outline">Login / Register</Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-md">
                     <AuthModal onSuccess={() => setAuthOpen(false)} />
@@ -171,7 +188,12 @@ const Navbar: React.FC = () => {
       
       {/* Mobile menu */}
       {isMobile && mobileMenuOpen && (
-        <div className="bg-background border-b px-4 py-2 space-y-2">
+        <motion.div 
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          className="bg-background border-b px-4 py-2 space-y-2"
+        >
           <Link 
             to="/" 
             className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-secondary"
@@ -197,18 +219,17 @@ const Navbar: React.FC = () => {
             <span>Tags</span>
           </Link>
           
+          <Button 
+            variant="default" 
+            onClick={handleAskQuestion}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <Plus size={16} />
+            Ask a Question
+          </Button>
+          
           {currentUser ? (
             <>
-              <Button 
-                variant="default" 
-                onClick={() => {
-                  navigate("/posts/ask");
-                  setMobileMenuOpen(false);
-                }}
-                className="w-full"
-              >
-                Ask a Question
-              </Button>
               <Link 
                 to="/settings" 
                 className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-secondary"
@@ -233,7 +254,7 @@ const Navbar: React.FC = () => {
             <Dialog open={authOpen} onOpenChange={setAuthOpen}>
               <DialogTrigger asChild>
                 <Button 
-                  variant="default"
+                  variant="outline"
                   className="w-full"
                   onClick={() => setMobileMenuOpen(false)}
                 >
@@ -248,7 +269,7 @@ const Navbar: React.FC = () => {
               </DialogContent>
             </Dialog>
           )}
-        </div>
+        </motion.div>
       )}
     </nav>
   );
