@@ -7,7 +7,7 @@ import { Tag as TagType } from '@/types';
 export async function getAllTags(): Promise<TagType[]> {
   try {
     await connectToDatabase();
-    const tags = await Tag.find().sort({ count: -1 });
+    const tags = await Tag.find({}).sort({ count: -1 }).exec();
     return tags.map(tag => ({
       id: tag._id.toString(),
       name: tag.name,
@@ -23,7 +23,7 @@ export async function getAllTags(): Promise<TagType[]> {
 export async function getTagByName(name: string): Promise<TagType | null> {
   try {
     await connectToDatabase();
-    const tag = await Tag.findOne({ name: name.toLowerCase() });
+    const tag = await Tag.findOne({ name: name.toLowerCase() }).exec();
     if (!tag) return null;
     
     return {
@@ -51,7 +51,7 @@ export async function createOrUpdateTags(tagNames: string[]): Promise<TagType[]>
         { name: normalizedName },
         { $inc: { count: 1 } }, // Increment count by 1
         { new: true, upsert: true } // Return updated document, create if not exists
-      );
+      ).exec();
       
       updatedTags.push({
         id: tag._id.toString(),
@@ -71,7 +71,7 @@ export async function createOrUpdateTags(tagNames: string[]): Promise<TagType[]>
 export async function deleteTag(id: string): Promise<boolean> {
   try {
     await connectToDatabase();
-    const result = await Tag.findByIdAndDelete(id);
+    const result = await Tag.findByIdAndDelete(id).exec();
     return !!result;
   } catch (error) {
     console.error(`Error deleting tag ${id}:`, error);

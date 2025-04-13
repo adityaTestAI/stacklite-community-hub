@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/types";
-import { Search, TagIcon } from "lucide-react";
+import { Search } from "lucide-react";
 import { motion } from "framer-motion";
 import TagIcon from "@/components/tag/TagIcon";
 import { getAllTags } from "@/api/tags";

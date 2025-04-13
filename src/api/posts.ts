@@ -8,7 +8,7 @@ import { Post as PostType } from '@/types';
 export async function getAllPosts(): Promise<PostType[]> {
   try {
     await connectToDatabase();
-    const posts = await Post.find().sort({ createdAt: -1 });
+    const posts = await Post.find({}).sort({ createdAt: -1 }).exec();
     
     return posts.map(post => ({
       id: post._id.toString(),
@@ -39,7 +39,7 @@ export async function getAllPosts(): Promise<PostType[]> {
 export async function getPostById(id: string): Promise<PostType | null> {
   try {
     await connectToDatabase();
-    const post = await Post.findById(id);
+    const post = await Post.findById(id).exec();
     if (!post) return null;
     
     // Increment view count
@@ -118,7 +118,7 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
       id,
       { ...postData },
       { new: true }
-    );
+    ).exec();
     
     if (!post) return null;
     
@@ -151,7 +151,7 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
 export async function deletePost(id: string): Promise<boolean> {
   try {
     await connectToDatabase();
-    const result = await Post.findByIdAndDelete(id);
+    const result = await Post.findByIdAndDelete(id).exec();
     return !!result;
   } catch (error) {
     console.error(`Error deleting post ${id}:`, error);
