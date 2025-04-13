@@ -8,7 +8,8 @@ import { Post as PostType } from '@/types';
 export async function getAllPosts(): Promise<PostType[]> {
   try {
     await connectToDatabase();
-    const posts = await Post.find({}).sort({ createdAt: -1 }).exec();
+    const query = Post.find({}).sort({ createdAt: -1 });
+    const posts = await query.exec();
     
     return posts.map(post => ({
       id: post._id.toString(),
@@ -39,7 +40,8 @@ export async function getAllPosts(): Promise<PostType[]> {
 export async function getPostById(id: string): Promise<PostType | null> {
   try {
     await connectToDatabase();
-    const post = await Post.findById(id).exec();
+    const query = Post.findById(id);
+    const post = await query.exec();
     if (!post) return null;
     
     // Increment view count
@@ -80,11 +82,13 @@ export async function createPost(postData: Omit<PostType, 'id' | 'createdAt' | '
     await createOrUpdateTags(postData.tags);
     
     // Then create the post
-    const post = await Post.create({
+    const newPost = {
       ...postData,
       createdAt: new Date(),
       answers: []
-    });
+    };
+    
+    const post = await Post.create(newPost);
     
     return {
       id: post._id.toString(),
@@ -114,11 +118,13 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
       await createOrUpdateTags(postData.tags);
     }
     
-    const post = await Post.findByIdAndUpdate(
+    const query = Post.findByIdAndUpdate(
       id,
       { ...postData },
       { new: true }
-    ).exec();
+    );
+    
+    const post = await query.exec();
     
     if (!post) return null;
     
@@ -151,7 +157,8 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
 export async function deletePost(id: string): Promise<boolean> {
   try {
     await connectToDatabase();
-    const result = await Post.findByIdAndDelete(id).exec();
+    const query = Post.findByIdAndDelete(id);
+    const result = await query.exec();
     return !!result;
   } catch (error) {
     console.error(`Error deleting post ${id}:`, error);
