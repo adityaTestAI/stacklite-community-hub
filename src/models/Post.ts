@@ -1,6 +1,14 @@
 
 import mongoose, { Document, Schema } from "mongoose";
 
+export interface AnswerDocument extends Document {
+  content: string;
+  authorId: string;
+  authorName: string;
+  createdAt: Date;
+  upvotes: number;
+}
+
 export interface IPost extends Document {
   title: string;
   content: string;
@@ -10,14 +18,7 @@ export interface IPost extends Document {
   tags: string[];
   upvotes: number;
   views: number;
-  answers: {
-    id: string;
-    content: string;
-    authorId: string;
-    authorName: string;
-    createdAt: Date;
-    upvotes: number;
-  }[];
+  answers: AnswerDocument[];
 }
 
 const AnswerSchema = new Schema({
@@ -80,12 +81,11 @@ const PostSchema = new Schema<IPost>({
   answers: [AnswerSchema]
 });
 
-// The issue is here - we need to be more defensive when checking for the model
-// Use try/catch and getModelForClass pattern to handle model creation more safely
+// Create or retrieve the model safely
 let PostModel: mongoose.Model<IPost>;
 
 try {
-  // Check if the model already exists to prevent model overwrite errors
+  // Check if the model already exists
   PostModel = mongoose.models.Post as mongoose.Model<IPost>;
 } catch (error) {
   // If model doesn't exist yet, create it

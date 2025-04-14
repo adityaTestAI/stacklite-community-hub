@@ -1,15 +1,14 @@
 
 import { connectToDatabase } from '@/lib/mongodb';
-import PostModel from '@/models/Post';
+import PostModel, { AnswerDocument } from '@/models/Post';
 import { createOrUpdateTags } from './tags';
-import { Post as PostType } from '@/types';
+import { Post as PostType, Answer as AnswerType } from '@/types';
 import mongoose from 'mongoose';
 
 // Get all posts
 export async function getAllPosts(): Promise<PostType[]> {
   try {
     await connectToDatabase();
-    // Use proper model reference from the import
     const posts = await PostModel.find({}).sort({ createdAt: -1 }).exec();
     
     return posts.map(post => ({
@@ -22,7 +21,7 @@ export async function getAllPosts(): Promise<PostType[]> {
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
-      answers: post.answers.map(ans => ({
+      answers: post.answers.map((ans: AnswerDocument) => ({
         id: ans._id.toString(),
         content: ans.content,
         authorId: ans.authorId,
@@ -58,7 +57,7 @@ export async function getPostById(id: string): Promise<PostType | null> {
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
-      answers: post.answers.map(ans => ({
+      answers: post.answers.map((ans: AnswerDocument) => ({
         id: ans._id.toString(),
         content: ans.content,
         authorId: ans.authorId,
@@ -136,7 +135,7 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
-      answers: post.answers.map(ans => ({
+      answers: post.answers.map((ans: AnswerDocument) => ({
         id: ans._id.toString(),
         content: ans.content,
         authorId: ans.authorId,
