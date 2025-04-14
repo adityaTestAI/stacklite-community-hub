@@ -20,6 +20,14 @@
     <script>
       // Polyfill for 'global' which is not defined in browser environments but used by some libraries
       window.global = window;
+      
+      // Polyfill for 'process' which is not defined in browser environments but used by Node.js specific code
+      window.process = {
+        env: {
+          NODE_ENV: 'development',
+          MONGODB_URI: "mongodb+srv://aditya:aditya@cluster0.yytesl0.mongodb.net/dev-replit"
+        }
+      };
     </script>
   </head>
 

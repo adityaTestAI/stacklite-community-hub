@@ -1,12 +1,16 @@
 
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://aditya:aditya@cluster0.yytesl0.mongodb.net/dev-replit";
+// Safely access environment variables in browser or Node.js context
+const MONGODB_URI = typeof process !== 'undefined' && process.env.MONGODB_URI 
+  ? process.env.MONGODB_URI 
+  : "mongodb+srv://aditya:aditya@cluster0.yytesl0.mongodb.net/dev-replit";
 
 if (!MONGODB_URI) {
   throw new Error('Please define the MONGODB_URI environment variable');
 }
 
+// Define the cached mongoose connection
 let cached = global.mongoose;
 
 if (!cached) {
