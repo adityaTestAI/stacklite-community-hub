@@ -20,4 +20,15 @@ const TagSchema = new Schema<ITag>({
   }
 });
 
-export default mongoose.models.Tag || mongoose.model<ITag>("Tag", TagSchema);
+// Use the same defensive pattern as in Post model
+let TagModel: mongoose.Model<ITag>;
+
+try {
+  // Check if the model already exists
+  TagModel = mongoose.models.Tag as mongoose.Model<ITag>;
+} catch (error) {
+  // If model doesn't exist yet, create it
+  TagModel = mongoose.model<ITag>("Tag", TagSchema);
+}
+
+export default TagModel;

@@ -80,4 +80,16 @@ const PostSchema = new Schema<IPost>({
   answers: [AnswerSchema]
 });
 
-export default mongoose.models.Post || mongoose.model<IPost>("Post", PostSchema);
+// The issue is here - we need to be more defensive when checking for the model
+// Use try/catch and getModelForClass pattern to handle model creation more safely
+let PostModel: mongoose.Model<IPost>;
+
+try {
+  // Check if the model already exists to prevent model overwrite errors
+  PostModel = mongoose.models.Post as mongoose.Model<IPost>;
+} catch (error) {
+  // If model doesn't exist yet, create it
+  PostModel = mongoose.model<IPost>("Post", PostSchema);
+}
+
+export default PostModel;
