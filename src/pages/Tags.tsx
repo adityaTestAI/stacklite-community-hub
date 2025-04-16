@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/types";
 import { Search } from "lucide-react";
@@ -30,6 +30,7 @@ const Tags = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTags = async () => {
@@ -55,6 +56,10 @@ const Tags = () => {
   const filteredTags = tags.filter((tag) =>
     tag.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleTagClick = (tagName: string) => {
+    navigate(`/posts?tag=${tagName}`);
+  };
 
   return (
     <motion.div
@@ -111,9 +116,9 @@ const Tags = () => {
         >
           {filteredTags.map((tag) => (
             <motion.div key={tag.id} variants={item}>
-              <Link
-                to={`/posts?tag=${tag.name}`}
-                className="border rounded-lg p-4 hover:border-primary/50 hover:bg-primary/5 transition-colors flex items-start"
+              <button
+                onClick={() => handleTagClick(tag.name)}
+                className="w-full text-left border rounded-lg p-4 hover:border-primary/50 hover:bg-primary/5 transition-colors flex items-start"
               >
                 <TagIcon tagName={tag.name} className="mr-3 mt-1" />
                 <div>
@@ -122,7 +127,7 @@ const Tags = () => {
                     {tag.count} {tag.count === 1 ? "post" : "posts"}
                   </p>
                 </div>
-              </Link>
+              </button>
             </motion.div>
           ))}
         </motion.div>

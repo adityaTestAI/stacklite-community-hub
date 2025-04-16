@@ -30,6 +30,10 @@ const Posts = () => {
   const [popularTags, setPopularTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Extract tag from URL if present
+  const searchParams = new URLSearchParams(location.search);
+  const tagFilter = searchParams.get("tag");
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -58,15 +62,12 @@ const Posts = () => {
     fetchData();
   }, [toast]);
 
-  // Check if we're coming from a tag page with a filter
+  // Log when we're filtering by tag
   useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const tagFilter = params.get("tag");
     if (tagFilter) {
       console.log(`Filtering by tag: ${tagFilter}`);
-      // The filtering is handled in the PostsList component
     }
-  }, [location.search]);
+  }, [tagFilter]);
 
   const handleAskQuestion = () => {
     navigate("/posts/ask");
@@ -86,8 +87,14 @@ const Posts = () => {
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h1 className="text-2xl font-bold">Posts</h1>
-          <p className="text-muted-foreground">Browse questions and answers from the community</p>
+          <h1 className="text-2xl font-bold">
+            {tagFilter ? `Posts tagged '${tagFilter}'` : 'Posts'}
+          </h1>
+          <p className="text-muted-foreground">
+            {tagFilter 
+              ? `Viewing all questions with the '${tagFilter}' tag` 
+              : 'Browse questions and answers from the community'}
+          </p>
         </motion.div>
         
         <motion.div

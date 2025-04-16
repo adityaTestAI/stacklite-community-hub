@@ -4,13 +4,13 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { X } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { createPost } from "@/api/posts";
+import RichTextEditor from "@/components/editor/RichTextEditor";
 
 const AskQuestion = () => {
   const { currentUser } = useAuth();
@@ -129,14 +129,14 @@ const AskQuestion = () => {
           className="space-y-2"
         >
           <Label htmlFor="content">Details</Label>
-          <Textarea
-            id="content"
-            placeholder="Provide all the details someone would need to answer your question..."
+          <RichTextEditor
             value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="min-h-[200px]"
-            required
+            onChange={setContent}
+            minHeight="300px"
           />
+          <p className="text-xs text-muted-foreground">
+            Format your content using the toolbar. You can use **bold**, *italic*, `code`, and lists.
+          </p>
         </motion.div>
         
         <motion.div 

@@ -1,11 +1,12 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import TagBadge from "@/components/tag/TagBadge";
 import PostCard from "@/components/post/PostCard";
 import { Post, Tag } from "@/types";
-import { Search } from "lucide-react";
+import { Search, X } from "lucide-react";
 import { motion } from "framer-motion";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface PostsListProps {
   posts: Post[];
@@ -19,24 +20,51 @@ const item = {
 
 const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  // Extract tag from URL query parameter on component mount
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tagFilter = params.get("tag");
+    if (tagFilter && !selectedTags.includes(tagFilter)) {
+      setSelectedTags([tagFilter]);
+    }
+  }, [location.search]);
 
   const filteredPosts = posts.filter((post) => {
     // Filter by search query
     const matchesQuery = post.title.toLowerCase().includes(searchQuery.toLowerCase());
     
-    // Filter by selected tag
-    const matchesTag = selectedTag ? post.tags.includes(selectedTag) : true;
+    // Filter by selected tags (any selected tag must be in post tags)
+    const matchesTags = selectedTags.length === 0 || 
+      selectedTags.some(tag => post.tags.includes(tag));
     
-    return matchesQuery && matchesTag;
+    return matchesQuery && matchesTags;
   });
 
   const handleTagClick = (tagName: string) => {
-    if (selectedTag === tagName) {
-      setSelectedTag(null); // Deselect if already selected
+    if (selectedTags.includes(tagName)) {
+      // Remove tag if already selected
+      setSelectedTags(selectedTags.filter(t => t !== tagName));
+      
+      // Update URL without the tag parameter
+      if (selectedTags.length === 1) {
+        navigate("/posts");
+      }
     } else {
-      setSelectedTag(tagName);
+      // Add tag if not already selected
+      setSelectedTags([tagName]);
+      
+      // Update URL with the tag parameter
+      navigate(`/posts?tag=${tagName}`);
     }
+  };
+
+  const clearAllTags = () => {
+    setSelectedTags([]);
+    navigate("/posts");
   };
 
   return (
@@ -54,33 +82,78 @@ const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
         />
       </motion.div>
       
-      {popularTags.length > 0 && (
+      {selectedTags.length > 0 ? (
         <motion.div 
           variants={item}
           className="space-y-2"
         >
-          <h3 className="text-sm font-medium">Popular Tags</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-sm font-medium">Selected Tags</h3>
+            <button 
+              onClick={clearAllTags}
+              className="text-xs text-muted-foreground hover:text-foreground"
+            >
+              Clear all
+            </button>
+          </div>
           <div className="flex flex-wrap gap-2">
-            {popularTags.map((tag) => (
-              <motion.div 
-                key={tag.id}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2 }}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <TagBadge
-                  key={tag.id}
-                  name={tag.name}
-                  count={tag.count}
-                  className={selectedTag === tag.name ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
-                  onClick={() => handleTagClick(tag.name)}
-                />
-              </motion.div>
-            ))}
+            {selectedTags.map((tag) => {
+              const tagObj = popularTags.find(t => t.name === tag) || { id: tag, name: tag, count: 0 };
+              return (
+                <motion.div 
+                  key={tagObj.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <TagBadge
+                    key={tagObj.id}
+                    name={tagObj.name}
+                    count={tagObj.count}
+                    className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    onClick={() => handleTagClick(tagObj.name)}
+                  >
+                    <span className="flex items-center gap-1">
+                      {tagObj.name}
+                      <X size={14} />
+                    </span>
+                  </TagBadge>
+                </motion.div>
+              );
+            })}
           </div>
         </motion.div>
+      ) : (
+        popularTags.length > 0 && (
+          <motion.div 
+            variants={item}
+            className="space-y-2"
+          >
+            <h3 className="text-sm font-medium">Popular Tags</h3>
+            <div className="flex flex-wrap gap-2">
+              {popularTags.map((tag) => (
+                <motion.div 
+                  key={tag.id}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.2 }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <TagBadge
+                    key={tag.id}
+                    name={tag.name}
+                    count={tag.count}
+                    className={selectedTags.includes(tag.name) ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
+                    onClick={() => handleTagClick(tag.name)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          </motion.div>
+        )
       )}
       
       <motion.div 
