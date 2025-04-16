@@ -47,6 +47,7 @@ const AskQuestion = () => {
       title: "",
       content: "",
     },
+    mode: "onBlur", // Validate on blur for better UX
   });
 
   // Check if user is logged in
@@ -84,7 +85,7 @@ const AskQuestion = () => {
     setSubmitting(true);
 
     try {
-      const newPost = await createPost({
+      await createPost({
         title: data.title,
         content: data.content,
         authorId: currentUser?.uid || "anonymous",
@@ -149,7 +150,7 @@ const AskQuestion = () => {
                       className="w-full"
                     />
                   </FormControl>
-                  <FormMessage className="text-sm font-medium text-destructive bg-destructive/10 rounded-md px-2 py-1 inline-block" />
+                  <FormMessage className="text-sm font-medium text-destructive bg-destructive/10 dark:bg-destructive/20 rounded-md px-2 py-1 inline-block shadow-sm" />
                 </FormItem>
               )}
             />
@@ -173,9 +174,9 @@ const AskQuestion = () => {
                       minHeight="300px"
                     />
                   </FormControl>
-                  <FormMessage className="text-sm font-medium text-destructive bg-destructive/10 rounded-md px-2 py-1 inline-block" />
+                  <FormMessage className="text-sm font-medium text-destructive bg-destructive/10 dark:bg-destructive/20 rounded-md px-2 py-1 inline-block shadow-sm" />
                   <p className="text-xs text-muted-foreground">
-                    Format your content using the toolbar. You can use **bold**, *italic*, `code`, and lists.
+                    Format your content using the toolbar. You can use <strong>bold</strong>, <em>italic</em>, <code>code</code>, and lists.
                   </p>
                 </FormItem>
               )}
@@ -195,7 +196,12 @@ const AskQuestion = () => {
                   placeholder="Add tags (press Enter)"
                   value={tag}
                   onChange={(e) => setTag(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddTag())}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddTag();
+                    }
+                  }}
                 />
                 <Button type="button" onClick={handleAddTag}>Add</Button>
               </div>
@@ -216,7 +222,7 @@ const AskQuestion = () => {
               )}
               
               {hasTagsError && (
-                <Alert variant="destructive" className="mt-2 py-2 border border-destructive/20">
+                <Alert variant="destructive" className="mt-2 py-2 border border-destructive/20 shadow-sm">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription className="text-sm">
                     Please add at least one tag to your question.
@@ -224,7 +230,9 @@ const AskQuestion = () => {
                 </Alert>
               )}
               
-              <p className="text-xs text-muted-foreground">Add up to 5 tags to describe what your question is about</p>
+              <p className="text-xs text-muted-foreground">
+                Add up to 5 tags to describe what your question is about
+              </p>
             </div>
           </motion.div>
           
