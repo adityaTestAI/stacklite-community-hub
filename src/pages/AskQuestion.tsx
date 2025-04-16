@@ -34,7 +34,8 @@ const AskQuestion = () => {
     }
   }, [currentUser, navigate, toast]);
 
-  const handleAddTag = () => {
+  const handleAddTag = (e?: React.MouseEvent) => {
+    if (e) e.preventDefault();
     if (tag && !tags.includes(tag) && tags.length < 5) {
       setTags([...tags, tag]);
       setTag("");

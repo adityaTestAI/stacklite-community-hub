@@ -20,7 +20,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<"write" | "preview">("write");
 
-  const handleBold = () => {
+  const handleBold = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
     const textarea = document.querySelector('textarea');
     if (!textarea) return;
 
@@ -37,7 +38,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }, 0);
   };
 
-  const handleItalic = () => {
+  const handleItalic = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
     const textarea = document.querySelector('textarea');
     if (!textarea) return;
 
@@ -53,7 +55,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }, 0);
   };
 
-  const handleUnderline = () => {
+  const handleUnderline = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
     const textarea = document.querySelector('textarea');
     if (!textarea) return;
 
@@ -69,7 +72,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }, 0);
   };
 
-  const handleCode = () => {
+  const handleCode = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
     const textarea = document.querySelector('textarea');
     if (!textarea) return;
 
@@ -100,7 +104,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }
   };
 
-  const handleBulletList = () => {
+  const handleBulletList = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
     const textarea = document.querySelector('textarea');
     if (!textarea) return;
 
@@ -124,7 +129,8 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
     }, 0);
   };
 
-  const handleNumberedList = () => {
+  const handleNumberedList = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent form submission
     const textarea = document.querySelector('textarea');
     if (!textarea) return;
 
@@ -206,22 +212,22 @@ const RichTextEditor: React.FC<RichTextEditorProps> = ({
           
           {activeTab === "write" && (
             <div className="flex items-center space-x-1">
-              <Button variant="ghost" size="icon" onClick={handleBold} title="Bold">
+              <Button type="button" variant="ghost" size="icon" onClick={handleBold} title="Bold">
                 <Bold className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleItalic} title="Italic">
+              <Button type="button" variant="ghost" size="icon" onClick={handleItalic} title="Italic">
                 <Italic className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleUnderline} title="Underline">
+              <Button type="button" variant="ghost" size="icon" onClick={handleUnderline} title="Underline">
                 <Underline className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleCode} title="Code">
+              <Button type="button" variant="ghost" size="icon" onClick={handleCode} title="Code">
                 <Code className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleBulletList} title="Bullet List">
+              <Button type="button" variant="ghost" size="icon" onClick={handleBulletList} title="Bullet List">
                 <List className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={handleNumberedList} title="Numbered List">
+              <Button type="button" variant="ghost" size="icon" onClick={handleNumberedList} title="Numbered List">
                 <ListOrdered className="h-4 w-4" />
               </Button>
             </div>
