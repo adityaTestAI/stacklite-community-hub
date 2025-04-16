@@ -1,14 +1,13 @@
 
 import mongoose from 'mongoose';
 
+// Determine if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
 // Safely access environment variables in browser or Node.js context
 const MONGODB_URI = typeof process !== 'undefined' && process.env.MONGODB_URI 
   ? process.env.MONGODB_URI 
   : "mongodb+srv://aditya:aditya@cluster0.yytesl0.mongodb.net/dev-replit";
-
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
 
 // Define the cached mongoose connection
 let cached = global.mongoose;
@@ -18,6 +17,12 @@ if (!cached) {
 }
 
 async function connectToDatabase() {
+  // In browser environment, we won't actually connect
+  if (isBrowser) {
+    console.log("Running in browser environment, using mock data");
+    return null;
+  }
+  
   if (cached.conn) {
     return cached.conn;
   }
@@ -35,4 +40,4 @@ async function connectToDatabase() {
   return cached.conn;
 }
 
-export { connectToDatabase, MONGODB_URI };
+export { connectToDatabase, MONGODB_URI, isBrowser };
