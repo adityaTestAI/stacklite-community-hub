@@ -1,5 +1,8 @@
 
 import mongoose from 'mongoose';
+import { mockPosts } from './mockData';
+import PostModel from '../models/Post';
+import TagModel from '../models/Tag';
 
 // Determine if we're in a browser environment
 const isBrowser = typeof window !== 'undefined';
@@ -45,4 +48,65 @@ async function connectToDatabase() {
   return cached.conn;
 }
 
-export { connectToDatabase, MONGODB_URI, isBrowser, isServer };
+// Function to seed mock data into the database
+async function seedDatabase() {
+  try {
+    // Only run on server and if not in browser
+    if (isBrowser) {
+      console.log("Cannot seed database in browser environment");
+      return;
+    }
+
+    await connectToDatabase();
+    
+    // Check if we already have data
+    const postCount = await PostModel.countDocuments();
+    
+    if (postCount > 0) {
+      console.log("Database already seeded, skipping...");
+      return;
+    }
+    
+    console.log("Seeding database with mock data...");
+    
+    // Process each mock post
+    for (const post of mockPosts) {
+      // First update tags
+      const tagNames = post.tags || [];
+      for (const name of tagNames) {
+        const normalizedName = name.toLowerCase().trim();
+        await TagModel.findOneAndUpdate(
+          { name: normalizedName },
+          { $inc: { count: 1 } },
+          { new: true, upsert: true }
+        ).exec();
+      }
+      
+      // Create the post
+      await PostModel.create({
+        title: post.title,
+        content: post.content,
+        authorId: post.authorId,
+        authorName: post.authorName,
+        createdAt: new Date(post.createdAt),
+        tags: post.tags,
+        upvotes: post.upvotes,
+        views: post.views,
+        answers: post.answers.map(answer => ({
+          content: answer.content,
+          authorId: answer.authorId,
+          authorName: answer.authorName,
+          createdAt: new Date(answer.createdAt),
+          upvotes: answer.upvotes
+        }))
+      });
+    }
+    
+    console.log("Database seeded successfully!");
+  } catch (error) {
+    console.error("Error seeding database:", error);
+    throw error;
+  }
+}
+
+export { connectToDatabase, seedDatabase, MONGODB_URI, isBrowser, isServer };

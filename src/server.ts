@@ -1,7 +1,7 @@
 
 import express from 'express';
 import cors from 'cors';
-import { connectToDatabase } from './lib/mongodb';
+import { connectToDatabase, seedDatabase } from './lib/mongodb';
 import mongoose from 'mongoose';
 import PostModel from './models/Post';
 import TagModel from './models/Tag';
@@ -16,10 +16,14 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Connect to database
+// Connect to database and seed if necessary
 connectToDatabase()
   .then(() => {
     console.log('Connected to MongoDB');
+    return seedDatabase(); // Seed the database after connecting
+  })
+  .then(() => {
+    console.log('Database ready');
   })
   .catch((error) => {
     console.error('Failed to connect to MongoDB:', error);
