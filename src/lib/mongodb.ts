@@ -57,10 +57,18 @@ async function seedDatabase() {
       return;
     }
 
-    await connectToDatabase();
+    // Make sure we have a database connection first
+    const connection = await connectToDatabase();
+    if (!connection) {
+      console.log("No database connection, cannot seed data");
+      return;
+    }
+    
+    // Ensure the models are properly loaded
+    const PostModelInstance = mongoose.model('Post');
     
     // Check if we already have data
-    const postCount = await PostModel.countDocuments();
+    const postCount = await PostModelInstance.countDocuments();
     
     if (postCount > 0) {
       console.log("Database already seeded, skipping...");

@@ -17,17 +17,23 @@ app.use(cors({
 app.use(express.json());
 
 // Connect to database and seed if necessary
-connectToDatabase()
-  .then(() => {
+async function initializeDatabase() {
+  try {
+    const connection = await connectToDatabase();
     console.log('Connected to MongoDB');
-    return seedDatabase(); // Seed the database after connecting
-  })
-  .then(() => {
-    console.log('Database ready');
-  })
-  .catch((error) => {
+    
+    // Only seed after successful connection
+    if (connection) {
+      await seedDatabase();
+      console.log('Database ready');
+    }
+  } catch (error) {
     console.error('Failed to connect to MongoDB:', error);
-  });
+  }
+}
+
+// Initialize the database
+initializeDatabase();
 
 // API Routes
 app.get('/api/health', (req, res) => {
