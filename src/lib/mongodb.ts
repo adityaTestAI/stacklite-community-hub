@@ -4,6 +4,9 @@ import mongoose from 'mongoose';
 // Determine if we're in a browser environment
 const isBrowser = typeof window !== 'undefined';
 
+// Is this running on the server?
+const isServer = !isBrowser && process.env.NODE_ENV !== 'test';
+
 // Safely access environment variables in browser or Node.js context
 const MONGODB_URI = typeof process !== 'undefined' && process.env.MONGODB_URI 
   ? process.env.MONGODB_URI 
@@ -32,7 +35,9 @@ async function connectToDatabase() {
       bufferCommands: false,
     };
 
+    console.log(`Connecting to MongoDB at: ${MONGODB_URI}`);
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
+      console.log("MongoDB connection established");
       return mongoose;
     });
   }
@@ -40,4 +45,4 @@ async function connectToDatabase() {
   return cached.conn;
 }
 
-export { connectToDatabase, MONGODB_URI, isBrowser };
+export { connectToDatabase, MONGODB_URI, isBrowser, isServer };
