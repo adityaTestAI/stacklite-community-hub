@@ -64,8 +64,10 @@ async function seedDatabase() {
       return;
     }
     
-    // Ensure the models are properly loaded
-    const PostModelInstance = mongoose.model('Post');
+    // Import models to ensure schemas are registered
+    // We don't need to create new variables, just importing will register the schemas
+    const PostModelInstance = PostModel;
+    const TagModelInstance = TagModel;
     
     // Check if we already have data
     const postCount = await PostModelInstance.countDocuments();

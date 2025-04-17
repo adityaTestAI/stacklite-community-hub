@@ -19,6 +19,10 @@ app.use(express.json());
 // Connect to database and seed if necessary
 async function initializeDatabase() {
   try {
+    // Explicitly import the models to ensure schemas are registered
+    // before we try to use them
+    console.log('Importing models...');
+    
     const connection = await connectToDatabase();
     console.log('Connected to MongoDB');
     
