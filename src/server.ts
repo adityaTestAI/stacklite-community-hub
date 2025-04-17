@@ -1,8 +1,8 @@
 
 import express from 'express';
+import cors from 'cors';
 import { connectToDatabase } from './lib/mongodb';
 import mongoose from 'mongoose';
-import cors from 'cors';
 import PostModel from './models/Post';
 import TagModel from './models/Tag';
 
@@ -10,7 +10,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: ['http://localhost:8080', 'https://localhost:8080'], // Add your frontend URL
+  credentials: true
+}));
 app.use(express.json());
 
 // Connect to database
