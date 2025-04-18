@@ -1,5 +1,6 @@
 
 import mongoose, { Document, Schema } from "mongoose";
+import { createBrowserMock, isBrowser } from "../lib/mongodb";
 
 export interface ITag extends Document {
   name: string;
@@ -20,15 +21,21 @@ const TagSchema = new Schema<ITag>({
   }
 });
 
-// Use the same defensive pattern as in Post model
-let TagModel: mongoose.Model<ITag>;
+// Handle browser environment differently
+let TagModel;
 
-try {
-  // Check if the model already exists
-  TagModel = mongoose.models.Tag as mongoose.Model<ITag>;
-} catch (error) {
-  // If model doesn't exist yet, create it
-  TagModel = mongoose.model<ITag>("Tag", TagSchema);
+if (isBrowser) {
+  // In browser, provide a mock implementation
+  TagModel = createBrowserMock();
+} else {
+  // In Node.js, use the actual Mongoose model
+  try {
+    // Check if the model already exists
+    TagModel = mongoose.models.Tag;
+  } catch (error) {
+    // If model doesn't exist yet, create it
+    TagModel = mongoose.model<ITag>("Tag", TagSchema);
+  }
 }
 
 export default TagModel;

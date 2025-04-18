@@ -5,10 +5,33 @@ import { createOrUpdateTags } from './tags';
 import { Post as PostType, Answer as AnswerType } from '@/types';
 import mongoose from 'mongoose';
 
+// Fallback data for browser environment
+const mockPosts: PostType[] = [
+  {
+    id: "1",
+    title: "Sample Post",
+    content: "This is a sample post when offline",
+    authorId: "sample-author",
+    authorName: "Sample User",
+    createdAt: new Date().toISOString(),
+    tags: ["react", "typescript"],
+    upvotes: 0,
+    views: 0,
+    answers: []
+  }
+];
+
 // Get all posts
 export async function getAllPosts(): Promise<PostType[]> {
   try {
     await connectToDatabase();
+    
+    // In browser, return mock data
+    if (isBrowser) {
+      console.log("Browser environment detected, returning mock posts data");
+      return mockPosts;
+    }
+    
     const posts = await PostModel.find({}).sort({ createdAt: -1 }).exec();
     
     return posts.map(post => ({

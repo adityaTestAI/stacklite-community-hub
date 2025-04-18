@@ -5,6 +5,7 @@ import { User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "@/components/ui/sonner";
 import { createOrUpdateUser } from "@/api/users";
+import { isBrowser } from "@/lib/mongodb";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -25,9 +26,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (user) {
         const userObject = {
           uid: user.uid,
-          email: user.email,
-          displayName: user.displayName,
-          photoURL: user.photoURL,
+          email: user.email || '',
+          displayName: user.displayName || '',
+          photoURL: user.photoURL || '',
         };
         
         setCurrentUser(userObject);
@@ -40,6 +41,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             displayName: user.displayName || '',
             photoURL: user.photoURL || ''
           });
+          
+          if (isBrowser) {
+            console.log("Browser environment detected, user data not actually saved to database");
+          }
         } catch (error) {
           console.error("Error updating user in database:", error);
         }

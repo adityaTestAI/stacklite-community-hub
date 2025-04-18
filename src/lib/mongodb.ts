@@ -45,4 +45,32 @@ async function connectToDatabase() {
   return cached.conn;
 }
 
-export { connectToDatabase, MONGODB_URI, isBrowser, isServer };
+// Mock functions for browser environment
+const createBrowserMock = () => {
+  return {
+    find: () => ({ 
+      sort: () => ({ 
+        exec: async () => [] 
+      }) 
+    }),
+    findOne: () => ({ 
+      exec: async () => null 
+    }),
+    findById: () => ({ 
+      exec: async () => null 
+    }),
+    findOneAndUpdate: () => ({ 
+      exec: async () => null 
+    }),
+    findByIdAndUpdate: () => ({
+      exec: async () => null
+    }),
+    findByIdAndDelete: () => ({
+      exec: async () => null
+    }),
+    create: async () => ({}),
+    save: async () => ({})
+  };
+};
+
+export { connectToDatabase, MONGODB_URI, isBrowser, isServer, createBrowserMock };

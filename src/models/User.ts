@@ -1,5 +1,6 @@
 
 import mongoose, { Document, Schema } from "mongoose";
+import { createBrowserMock, isBrowser } from "../lib/mongodb";
 
 export interface IUser extends Document {
   uid: string;
@@ -80,15 +81,21 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-// Create or retrieve the model safely
-let UserModel: mongoose.Model<IUser>;
+// Handle browser environment differently
+let UserModel;
 
-try {
-  // Check if the model already exists
-  UserModel = mongoose.models.User as mongoose.Model<IUser>;
-} catch (error) {
-  // If model doesn't exist yet, create it
-  UserModel = mongoose.model<IUser>("User", UserSchema);
+if (isBrowser) {
+  // In browser, provide a mock implementation
+  UserModel = createBrowserMock();
+} else {
+  // In Node.js, use the actual Mongoose model
+  try {
+    // Check if the model already exists
+    UserModel = mongoose.models.User;
+  } catch (error) {
+    // If model doesn't exist yet, create it
+    UserModel = mongoose.model<IUser>("User", UserSchema);
+  }
 }
 
 export default UserModel;

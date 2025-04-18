@@ -1,5 +1,6 @@
 
 import mongoose, { Document, Schema } from "mongoose";
+import { createBrowserMock, isBrowser } from "../lib/mongodb";
 
 export interface AnswerDocument extends Document {
   content: string;
@@ -81,15 +82,21 @@ const PostSchema = new Schema<IPost>({
   answers: [AnswerSchema]
 });
 
-// Create or retrieve the model safely
-let PostModel: mongoose.Model<IPost>;
+// Handle browser environment differently
+let PostModel;
 
-try {
-  // Check if the model already exists
-  PostModel = mongoose.models.Post as mongoose.Model<IPost>;
-} catch (error) {
-  // If model doesn't exist yet, create it
-  PostModel = mongoose.model<IPost>("Post", PostSchema);
+if (isBrowser) {
+  // In browser, provide a mock implementation
+  PostModel = createBrowserMock();
+} else {
+  // In Node.js, use the actual Mongoose model
+  try {
+    // Check if the model already exists
+    PostModel = mongoose.models.Post;
+  } catch (error) {
+    // If model doesn't exist yet, create it
+    PostModel = mongoose.model<IPost>("Post", PostSchema);
+  }
 }
 
 export default PostModel;

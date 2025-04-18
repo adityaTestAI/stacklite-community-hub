@@ -1,12 +1,37 @@
 
-import { connectToDatabase } from '@/lib/mongodb';
+import { connectToDatabase, isBrowser } from '@/lib/mongodb';
 import UserModel from '@/models/User';
 import { User as UserType } from '@/types';
+
+// Fallback data for browser environment
+const mockUser: UserType = {
+  uid: "sample-uid",
+  email: "sample@example.com",
+  displayName: "Sample User",
+  photoURL: "",
+  notificationSettings: {
+    emailNotifications: true,
+    weeklyDigest: true,
+    upvoteNotifications: true
+  },
+  appearance: {
+    darkMode: false,
+    compactView: false,
+    codeSyntaxHighlighting: true
+  }
+};
 
 // Get user by firebase UID
 export async function getUserByUid(uid: string): Promise<UserType | null> {
   try {
     await connectToDatabase();
+    
+    // In browser, return mock data
+    if (isBrowser) {
+      console.log(`Browser environment detected, returning mock user data for ${uid}`);
+      return mockUser;
+    }
+    
     const user = await UserModel.findOne({ uid }).exec();
     
     if (!user) return null;
@@ -29,6 +54,15 @@ export async function getUserByUid(uid: string): Promise<UserType | null> {
 export async function createOrUpdateUser(userData: Partial<UserType> & { uid: string }): Promise<UserType> {
   try {
     await connectToDatabase();
+    
+    // In browser, return mock data
+    if (isBrowser) {
+      console.log(`Browser environment detected, returning mock user data for create/update ${userData.uid}`);
+      return {
+        ...mockUser,
+        ...userData
+      };
+    }
     
     const { uid, ...restData } = userData;
     
