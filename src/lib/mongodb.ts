@@ -10,7 +10,7 @@ const isServer = !isBrowser && process.env.NODE_ENV !== 'test';
 // Safely access environment variables in browser or Node.js context
 const MONGODB_URI = typeof process !== 'undefined' && process.env.MONGODB_URI 
   ? process.env.MONGODB_URI 
-  : "mongodb+srv://aditya:aditya@cluster0.yytesl0.mongodb.net/dev-replit";
+  : "mongodb+srv://stack-overflow:stack-overflow@stack-overflow.vbr5mww.mongodb.net/stack-overflow";
 
 // Define the cached mongoose connection
 let cached = global.mongoose;
