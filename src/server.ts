@@ -1,10 +1,11 @@
 
 import express from 'express';
 import cors from 'cors';
-import { connectToDatabase, seedDatabase } from './lib/mongodb';
+import { connectToDatabase } from './lib/mongodb';
 import mongoose from 'mongoose';
 import PostModel from './models/Post';
 import TagModel from './models/Tag';
+import UserModel from './models/User';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -16,19 +17,16 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Connect to database and seed if necessary
+// Connect to database
 async function initializeDatabase() {
   try {
-    // Explicitly import the models to ensure schemas are registered
-    // before we try to use them
+    // Ensure models are imported to register schemas
     console.log('Importing models...');
     
     const connection = await connectToDatabase();
     console.log('Connected to MongoDB');
     
-    // Only seed after successful connection
     if (connection) {
-      await seedDatabase();
       console.log('Database ready');
     }
   } catch (error) {
@@ -132,6 +130,132 @@ app.get('/api/tags/:name', async (req, res) => {
   } catch (error) {
     console.error(`Error fetching tag ${req.params.name}:`, error);
     res.status(500).json({ error: 'Failed to fetch tag' });
+  }
+});
+
+// User routes
+app.get('/api/users/:uid', async (req, res) => {
+  try {
+    const user = await UserModel.findOne({ uid: req.params.uid }).exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error(`Error fetching user ${req.params.uid}:`, error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+app.post('/api/users', async (req, res) => {
+  try {
+    const { uid, email, displayName, photoURL } = req.body;
+    
+    if (!uid || !email) {
+      return res.status(400).json({ error: 'User ID and email are required' });
+    }
+    
+    const user = await UserModel.findOneAndUpdate(
+      { uid },
+      { 
+        uid,
+        email, 
+        displayName: displayName || email.split('@')[0],
+        photoURL: photoURL || '',
+        updatedAt: new Date()
+      },
+      { new: true, upsert: true, setDefaultsOnInsert: true }
+    ).exec();
+    
+    res.status(201).json(user);
+  } catch (error) {
+    console.error('Error creating/updating user:', error);
+    res.status(500).json({ error: 'Failed to create/update user' });
+  }
+});
+
+app.patch('/api/users/:uid/profile', async (req, res) => {
+  try {
+    const { displayName, photoURL } = req.body;
+    
+    const user = await UserModel.findOneAndUpdate(
+      { uid: req.params.uid },
+      { 
+        ...(displayName !== undefined && { displayName }),
+        ...(photoURL !== undefined && { photoURL }),
+        updatedAt: new Date()
+      },
+      { new: true }
+    ).exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error(`Error updating user profile ${req.params.uid}:`, error);
+    res.status(500).json({ error: 'Failed to update user profile' });
+  }
+});
+
+app.patch('/api/users/:uid/notifications', async (req, res) => {
+  try {
+    const settings = req.body;
+    
+    const updateData = Object.entries(settings).reduce((acc, [key, value]) => {
+      acc[`notificationSettings.${key}`] = value;
+      return acc;
+    }, {} as Record<string, any>);
+    
+    const user = await UserModel.findOneAndUpdate(
+      { uid: req.params.uid },
+      { 
+        $set: updateData,
+        updatedAt: new Date()
+      },
+      { new: true }
+    ).exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error(`Error updating notification settings for user ${req.params.uid}:`, error);
+    res.status(500).json({ error: 'Failed to update notification settings' });
+  }
+});
+
+app.patch('/api/users/:uid/appearance', async (req, res) => {
+  try {
+    const settings = req.body;
+    
+    const updateData = Object.entries(settings).reduce((acc, [key, value]) => {
+      acc[`appearance.${key}`] = value;
+      return acc;
+    }, {} as Record<string, any>);
+    
+    const user = await UserModel.findOneAndUpdate(
+      { uid: req.params.uid },
+      { 
+        $set: updateData,
+        updatedAt: new Date()
+      },
+      { new: true }
+    ).exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error(`Error updating appearance settings for user ${req.params.uid}:`, error);
+    res.status(500).json({ error: 'Failed to update appearance settings' });
   }
 });
 

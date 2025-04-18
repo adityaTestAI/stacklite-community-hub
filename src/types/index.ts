@@ -5,6 +5,16 @@ export interface User {
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
+  notificationSettings?: {
+    emailNotifications: boolean;
+    weeklyDigest: boolean;
+    upvoteNotifications: boolean;
+  };
+  appearance?: {
+    darkMode: boolean;
+    compactView: boolean;
+    codeSyntaxHighlighting: boolean;
+  };
 }
 
 // Post types

@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,15 @@ import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
 import { auth, updateProfile } from "@/lib/firebase";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { 
+  getUserByUid, 
+  updateUserProfile, 
+  updateNotificationSettings, 
+  updateAppearanceSettings, 
+  createOrUpdateUser 
+} from "@/api/users";
+import { LoaderCircle } from "lucide-react";
 
 const Settings = () => {
   const { currentUser, loading } = useAuth();
@@ -49,60 +58,233 @@ const Settings = () => {
 
 const SettingsContent = () => {
   const { currentUser } = useAuth();
-  const [displayName, setDisplayName] = useState(currentUser?.displayName || "");
-  const [avatarUrl, setAvatarUrl] = useState(currentUser?.photoURL || "");
+  const [displayName, setDisplayName] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
+  const [weeklyDigest, setWeeklyDigest] = useState(true);
+  const [upvoteNotifications, setUpvoteNotifications] = useState(true);
   const [darkMode, setDarkMode] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [compactView, setCompactView] = useState(false);
+  const [codeSyntaxHighlighting, setCodeSyntaxHighlighting] = useState(true);
 
-  const handleUpdateProfile = async () => {
-    if (!auth.currentUser) return;
-    
-    try {
-      setSaving(true);
-      await updateProfile(auth.currentUser, {
-        displayName,
-        photoURL: avatarUrl
+  // Fetch user data from API
+  const { data: userData, isLoading: isLoadingUser, isError } = useQuery({
+    queryKey: ['user', currentUser?.uid],
+    queryFn: () => getUserByUid(currentUser?.uid || ''),
+    enabled: !!currentUser?.uid,
+    onSuccess: (data) => {
+      if (!data) {
+        // Create user if not exists
+        if (currentUser) {
+          createUserMutation.mutate({
+            uid: currentUser.uid,
+            email: currentUser.email || '',
+            displayName: currentUser.displayName || '',
+            photoURL: currentUser.photoURL || ''
+          });
+        }
+        return;
+      }
+      
+      // Set form values from fetched user data
+      setDisplayName(data.displayName || '');
+      setAvatarUrl(data.photoURL || '');
+      
+      // Set notification settings
+      if (data.notificationSettings) {
+        setEmailNotifications(data.notificationSettings.emailNotifications);
+        setWeeklyDigest(data.notificationSettings.weeklyDigest);
+        setUpvoteNotifications(data.notificationSettings.upvoteNotifications);
+      }
+      
+      // Set appearance settings
+      if (data.appearance) {
+        setDarkMode(data.appearance.darkMode);
+        setCompactView(data.appearance.compactView);
+        setCodeSyntaxHighlighting(data.appearance.codeSyntaxHighlighting);
+        
+        // Apply dark mode if set
+        if (data.appearance.darkMode) {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+      }
+    }
+  });
+
+  // Create user mutation
+  const createUserMutation = useMutation({
+    mutationFn: createOrUpdateUser,
+    onSuccess: () => {
+      toast({
+        title: "Profile created",
+        description: "Your profile has been created successfully."
       });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error creating profile",
+        description: error.message || "Failed to create profile.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  // Profile update mutation
+  const profileMutation = useMutation({
+    mutationFn: (data: { displayName: string; photoURL: string }) => 
+      updateUserProfile(currentUser?.uid || '', data),
+    onSuccess: () => {
+      // Also update Firebase profile
+      if (auth.currentUser) {
+        updateProfile(auth.currentUser, {
+          displayName,
+          photoURL: avatarUrl
+        });
+      }
       
       toast({
         title: "Profile updated",
         description: "Your profile information has been updated successfully."
       });
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       toast({
         title: "Update failed",
         description: error.message || "Failed to update profile information.",
         variant: "destructive"
       });
-    } finally {
-      setSaving(false);
     }
-  };
+  });
 
-  const handleToggleDarkMode = () => {
-    setDarkMode(!darkMode);
-    // In a real app, we would save this preference and update the theme
-    if (darkMode) {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
+  // Notification settings mutation
+  const notificationMutation = useMutation({
+    mutationFn: (settings: Partial<{ emailNotifications: boolean; weeklyDigest: boolean; upvoteNotifications: boolean }>) => 
+      updateNotificationSettings(currentUser?.uid || '', settings),
+    onSuccess: () => {
+      toast({
+        title: "Notification settings saved",
+        description: "Your notification preferences have been updated."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update notification settings.",
+        variant: "destructive"
+      });
     }
-    
-    toast({
-      title: `${darkMode ? "Light" : "Dark"} mode activated`,
-      description: `Theme has been switched to ${darkMode ? "light" : "dark"} mode.`
+  });
+
+  // Appearance settings mutation
+  const appearanceMutation = useMutation({
+    mutationFn: (settings: Partial<{ darkMode: boolean; compactView: boolean; codeSyntaxHighlighting: boolean }>) => 
+      updateAppearanceSettings(currentUser?.uid || '', settings),
+    onSuccess: () => {
+      toast({
+        title: "Appearance settings saved",
+        description: "Your appearance preferences have been updated."
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Update failed",
+        description: error.message || "Failed to update appearance settings.",
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleUpdateProfile = () => {
+    profileMutation.mutate({ 
+      displayName, 
+      photoURL: avatarUrl 
     });
   };
 
   const handleToggleEmailNotifications = () => {
-    setEmailNotifications(!emailNotifications);
-    // In a real app, we would save this preference
+    const newValue = !emailNotifications;
+    setEmailNotifications(newValue);
+    notificationMutation.mutate({ emailNotifications: newValue });
+  };
+
+  const handleToggleWeeklyDigest = () => {
+    const newValue = !weeklyDigest;
+    setWeeklyDigest(newValue);
+    notificationMutation.mutate({ weeklyDigest: newValue });
+  };
+
+  const handleToggleUpvoteNotifications = () => {
+    const newValue = !upvoteNotifications;
+    setUpvoteNotifications(newValue);
+    notificationMutation.mutate({ upvoteNotifications: newValue });
+  };
+
+  const handleToggleDarkMode = () => {
+    const newValue = !darkMode;
+    setDarkMode(newValue);
+    
+    // Update document class
+    if (newValue) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+    
+    appearanceMutation.mutate({ darkMode: newValue });
+    
     toast({
-      title: "Notification settings saved",
-      description: `Email notifications ${!emailNotifications ? "enabled" : "disabled"}.`
+      title: `${newValue ? "Dark" : "Light"} mode activated`,
+      description: `Theme has been switched to ${newValue ? "dark" : "light"} mode.`
     });
   };
+
+  const handleToggleCompactView = () => {
+    const newValue = !compactView;
+    setCompactView(newValue);
+    appearanceMutation.mutate({ compactView: newValue });
+  };
+
+  const handleToggleCodeSyntaxHighlighting = () => {
+    const newValue = !codeSyntaxHighlighting;
+    setCodeSyntaxHighlighting(newValue);
+    appearanceMutation.mutate({ codeSyntaxHighlighting: newValue });
+  };
+
+  if (isLoadingUser) {
+    return (
+      <div className="container mx-auto py-6 px-4 flex justify-center items-center min-h-[50vh]">
+        <LoaderCircle className="animate-spin h-8 w-8 text-primary" />
+        <span className="ml-2">Loading settings...</span>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="container mx-auto py-6 px-4">
+        <div className="max-w-2xl mx-auto">
+          <Card className="border-destructive">
+            <CardHeader>
+              <CardTitle className="text-destructive">Error Loading Settings</CardTitle>
+              <CardDescription>
+                There was a problem loading your settings. Please try again later.
+              </CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <Button 
+                variant="outline" 
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+            </CardFooter>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-6 px-4">
@@ -172,9 +354,9 @@ const SettingsContent = () => {
               <CardFooter className="flex justify-end">
                 <Button 
                   onClick={handleUpdateProfile}
-                  disabled={saving}
+                  disabled={profileMutation.isPending}
                 >
-                  {saving ? "Saving..." : "Save Changes"}
+                  {profileMutation.isPending ? "Saving..." : "Save Changes"}
                 </Button>
               </CardFooter>
             </Card>
@@ -199,6 +381,7 @@ const SettingsContent = () => {
                   <Switch 
                     checked={emailNotifications}
                     onCheckedChange={handleToggleEmailNotifications}
+                    disabled={notificationMutation.isPending}
                   />
                 </div>
                 
@@ -209,7 +392,11 @@ const SettingsContent = () => {
                       Receive a weekly summary of popular questions in your topics.
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={weeklyDigest} 
+                    onCheckedChange={handleToggleWeeklyDigest}
+                    disabled={notificationMutation.isPending}
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -219,7 +406,11 @@ const SettingsContent = () => {
                       Get notified when someone upvotes your post or answer.
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={upvoteNotifications} 
+                    onCheckedChange={handleToggleUpvoteNotifications}
+                    disabled={notificationMutation.isPending}
+                  />
                 </div>
               </CardContent>
             </Card>
@@ -244,6 +435,7 @@ const SettingsContent = () => {
                   <Switch 
                     checked={darkMode}
                     onCheckedChange={handleToggleDarkMode}
+                    disabled={appearanceMutation.isPending}
                   />
                 </div>
                 
@@ -254,7 +446,11 @@ const SettingsContent = () => {
                       Show more content with less spacing.
                     </p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={compactView}
+                    onCheckedChange={handleToggleCompactView}
+                    disabled={appearanceMutation.isPending}
+                  />
                 </div>
                 
                 <div className="flex items-center justify-between">
@@ -264,7 +460,11 @@ const SettingsContent = () => {
                       Enable syntax highlighting in code blocks.
                     </p>
                   </div>
-                  <Switch defaultChecked />
+                  <Switch 
+                    checked={codeSyntaxHighlighting}
+                    onCheckedChange={handleToggleCodeSyntaxHighlighting}
+                    disabled={appearanceMutation.isPending}
+                  />
                 </div>
               </CardContent>
             </Card>

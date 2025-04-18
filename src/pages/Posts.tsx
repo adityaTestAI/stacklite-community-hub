@@ -1,15 +1,16 @@
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import PostsList from "@/components/post/PostsList";
 import { Post, Tag } from "@/types";
 import { useAuth } from "@/context/AuthContext";
-import { Plus } from "lucide-react";
+import { Plus, LoaderCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useQuery } from "@tanstack/react-query";
 import { getAllPosts } from "@/api/posts";
 import { getAllTags } from "@/api/tags";
-import { useToast } from "@/hooks/use-toast";
 
 const container = {
   hidden: { opacity: 0 },
@@ -26,44 +27,43 @@ const Posts = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [popularTags, setPopularTags] = useState<Tag[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Extract tag from URL if present
   const searchParams = new URLSearchParams(location.search);
   const tagFilter = searchParams.get("tag");
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        
-        // Fetch posts and tags in parallel
-        const [postsData, tagsData] = await Promise.all([
-          getAllPosts(),
-          getAllTags()
-        ]);
-        
-        setPosts(postsData);
-        setPopularTags(tagsData);
-      } catch (error) {
-        console.error("Error fetching data:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load posts. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch posts using react-query
+  const { 
+    data: posts = [], 
+    isLoading: isLoadingPosts,
+    error: postsError
+  } = useQuery({
+    queryKey: ['posts'],
+    queryFn: getAllPosts
+  });
 
-    fetchData();
-  }, [toast]);
+  // Fetch tags using react-query
+  const { 
+    data: tags = [], 
+    isLoading: isLoadingTags
+  } = useQuery({
+    queryKey: ['tags'],
+    queryFn: getAllTags
+  });
+
+  // If there's an error fetching posts, show a toast
+  React.useEffect(() => {
+    if (postsError) {
+      toast({
+        title: "Error",
+        description: "Failed to load posts. Please try again later.",
+        variant: "destructive",
+      });
+    }
+  }, [postsError, toast]);
 
   // Log when we're filtering by tag
-  useEffect(() => {
+  React.useEffect(() => {
     if (tagFilter) {
       console.log(`Filtering by tag: ${tagFilter}`);
     }
@@ -113,14 +113,11 @@ const Posts = () => {
         </motion.div>
       </div>
       
-      {loading ? (
+      {isLoadingPosts || isLoadingTags ? (
         <div className="flex justify-center py-20">
-          <div className="animate-pulse space-y-4 w-full max-w-3xl">
-            <div className="h-12 bg-secondary rounded"></div>
-            <div className="h-6 bg-secondary rounded w-48"></div>
-            <div className="h-32 bg-secondary rounded"></div>
-            <div className="h-32 bg-secondary rounded"></div>
-            <div className="h-32 bg-secondary rounded"></div>
+          <div className="flex flex-col items-center">
+            <LoaderCircle className="animate-spin h-8 w-8 text-primary mb-2" />
+            <p className="text-muted-foreground">Loading posts...</p>
           </div>
         </div>
       ) : (
@@ -129,7 +126,7 @@ const Posts = () => {
           initial="hidden"
           animate="show"
         >
-          <PostsList posts={posts} popularTags={popularTags} />
+          <PostsList posts={posts} popularTags={tags} />
         </motion.div>
       )}
     </motion.div>

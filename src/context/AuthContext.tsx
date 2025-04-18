@@ -4,6 +4,7 @@ import { auth, onAuthStateChanged } from "@/lib/firebase";
 import { User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "@/components/ui/sonner";
+import { createOrUpdateUser } from "@/api/users";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -20,14 +21,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast: showToast } = useToast();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setCurrentUser({
+        const userObject = {
           uid: user.uid,
           email: user.email,
           displayName: user.displayName,
           photoURL: user.photoURL,
-        });
+        };
+        
+        setCurrentUser(userObject);
+        
+        // Create or update user in database
+        try {
+          await createOrUpdateUser({
+            uid: user.uid,
+            email: user.email || '',
+            displayName: user.displayName || '',
+            photoURL: user.photoURL || ''
+          });
+        } catch (error) {
+          console.error("Error updating user in database:", error);
+        }
       } else {
         setCurrentUser(null);
       }
