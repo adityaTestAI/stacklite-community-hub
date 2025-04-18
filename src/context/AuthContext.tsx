@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth, onAuthStateChanged } from "@/lib/firebase";
 import { User } from "@/types";
@@ -16,6 +17,7 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -39,6 +41,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
         } catch (error) {
           console.error("Error updating user in database:", error);
+          toast({
+            title: "Error",
+            description: "Failed to update user profile. Some features may be limited.",
+            variant: "destructive",
+          });
         }
       } else {
         setCurrentUser(null);
@@ -47,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     return unsubscribe;
-  }, []);
+  }, [toast]);
 
   const value = {
     currentUser,

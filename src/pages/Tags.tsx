@@ -1,11 +1,12 @@
 
-import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Tag } from "@/types";
-import { Search } from "lucide-react";
+import { Search, LoaderCircle } from "lucide-react";
 import { motion } from "framer-motion";
 import TagIcon from "@/components/tag/TagIcon";
+import { useQuery } from "@tanstack/react-query";
 import { getAllTags } from "@/api/tags";
 import { useToast } from "@/hooks/use-toast";
 
@@ -26,32 +27,31 @@ const item = {
 };
 
 const Tags = () => {
-  const [tags, setTags] = useState<Tag[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchTags = async () => {
-      try {
-        setLoading(true);
-        const tagsData = await getAllTags();
-        setTags(tagsData);
-      } catch (error) {
-        console.error("Error fetching tags:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load tags. Please try again later.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch tags using react-query
+  const { 
+    data: tags = [], 
+    isLoading,
+    error
+  } = useQuery({
+    queryKey: ['tags'],
+    queryFn: getAllTags
+  });
 
-    fetchTags();
-  }, [toast]);
+  // If there's an error fetching tags, show a toast
+  React.useEffect(() => {
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to load tags. Please try again later.",
+        variant: "destructive",
+      });
+      console.error("Error fetching tags:", error);
+    }
+  }, [error, toast]);
 
   const filteredTags = tags.filter((tag) =>
     tag.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -95,17 +95,12 @@ const Tags = () => {
         </div>
       </motion.div>
 
-      {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[...Array(8)].map((_, i) => (
-            <motion.div 
-              key={i} 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: i * 0.05 }}
-              className="animate-pulse h-24 bg-secondary rounded"
-            ></motion.div>
-          ))}
+      {isLoading ? (
+        <div className="flex justify-center py-20">
+          <div className="flex flex-col items-center">
+            <LoaderCircle className="animate-spin h-8 w-8 text-primary mb-2" />
+            <p className="text-muted-foreground">Loading tags...</p>
+          </div>
         </div>
       ) : filteredTags.length > 0 ? (
         <motion.div 

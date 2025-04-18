@@ -1,3 +1,4 @@
+
 import { connectToDatabase } from '@/lib/mongodb';
 import PostModel, { AnswerDocument } from '@/models/Post';
 import { createOrUpdateTags } from './tags';
@@ -20,12 +21,41 @@ const mockPosts: PostType[] = [
   }
 ];
 
+// Check if we're in browser environment
+const isBrowser = typeof window !== 'undefined';
+
 // Get all posts
 export async function getAllPosts(): Promise<PostType[]> {
   try {
     await connectToDatabase();
     
-    // In browser, return mock data
+    // In browser, use API endpoint
+    if (isBrowser) {
+      const response = await fetch('/api/posts');
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      const data = await response.json();
+      return data.map((post: any) => ({
+        id: post._id || post.id,
+        title: post.title,
+        content: post.content,
+        authorId: post.authorId,
+        authorName: post.authorName,
+        createdAt: new Date(post.createdAt).toISOString(),
+        tags: post.tags,
+        upvotes: post.upvotes,
+        views: post.views,
+        answers: (post.answers || []).map((ans: any) => ({
+          id: ans._id || ans.id,
+          content: ans.content,
+          authorId: ans.authorId,
+          authorName: ans.authorName,
+          createdAt: new Date(ans.createdAt).toISOString(),
+          upvotes: ans.upvotes
+        }))
+      }));
+    }
     
     const posts = await PostModel.find({}).sort({ createdAt: -1 }).exec();
     
@@ -50,7 +80,7 @@ export async function getAllPosts(): Promise<PostType[]> {
     }));
   } catch (error) {
     console.error("Error fetching posts:", error);
-    throw error;
+    return mockPosts;
   }
 }
 
@@ -58,6 +88,35 @@ export async function getAllPosts(): Promise<PostType[]> {
 export async function getPostById(id: string): Promise<PostType | null> {
   try {
     await connectToDatabase();
+    
+    if (isBrowser) {
+      const response = await fetch(`/api/posts/${id}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      const post = await response.json();
+      return {
+        id: post._id || post.id,
+        title: post.title,
+        content: post.content,
+        authorId: post.authorId,
+        authorName: post.authorName,
+        createdAt: new Date(post.createdAt).toISOString(),
+        tags: post.tags,
+        upvotes: post.upvotes,
+        views: post.views,
+        answers: (post.answers || []).map((ans: any) => ({
+          id: ans._id || ans.id,
+          content: ans.content,
+          authorId: ans.authorId,
+          authorName: ans.authorName,
+          createdAt: new Date(ans.createdAt).toISOString(),
+          upvotes: ans.upvotes
+        }))
+      };
+    }
+    
     const post = await PostModel.findById(id).exec();
     if (!post) return null;
     
@@ -86,7 +145,7 @@ export async function getPostById(id: string): Promise<PostType | null> {
     };
   } catch (error) {
     console.error(`Error fetching post ${id}:`, error);
-    throw error;
+    return null;
   }
 }
 
@@ -94,6 +153,34 @@ export async function getPostById(id: string): Promise<PostType | null> {
 export async function createPost(postData: Omit<PostType, 'id' | 'createdAt' | 'answers'>): Promise<PostType> {
   try {
     await connectToDatabase();
+    
+    if (isBrowser) {
+      const response = await fetch('/api/posts', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      
+      const post = await response.json();
+      return {
+        id: post._id || post.id,
+        title: post.title,
+        content: post.content,
+        authorId: post.authorId,
+        authorName: post.authorName,
+        createdAt: new Date(post.createdAt).toISOString(),
+        tags: post.tags,
+        upvotes: post.upvotes,
+        views: post.views,
+        answers: []
+      };
+    }
     
     // First update tags
     await createOrUpdateTags(postData.tags);
@@ -130,6 +217,42 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
   try {
     await connectToDatabase();
     
+    if (isBrowser) {
+      const response = await fetch(`/api/posts/${id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(postData),
+      });
+      
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      
+      const post = await response.json();
+      return {
+        id: post._id || post.id,
+        title: post.title,
+        content: post.content,
+        authorId: post.authorId,
+        authorName: post.authorName,
+        createdAt: new Date(post.createdAt).toISOString(),
+        tags: post.tags,
+        upvotes: post.upvotes,
+        views: post.views,
+        answers: (post.answers || []).map((ans: any) => ({
+          id: ans._id || ans.id,
+          content: ans.content,
+          authorId: ans.authorId,
+          authorName: ans.authorName,
+          createdAt: new Date(ans.createdAt).toISOString(),
+          upvotes: ans.upvotes
+        }))
+      };
+    }
+    
     // If tags are being updated, update tag counts
     if (postData.tags && postData.tags.length > 0) {
       await createOrUpdateTags(postData.tags);
@@ -164,7 +287,7 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
     };
   } catch (error) {
     console.error(`Error updating post ${id}:`, error);
-    throw error;
+    return null;
   }
 }
 
@@ -172,10 +295,19 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
 export async function deletePost(id: string): Promise<boolean> {
   try {
     await connectToDatabase();
+    
+    if (isBrowser) {
+      const response = await fetch(`/api/posts/${id}`, {
+        method: 'DELETE',
+      });
+      
+      return response.ok;
+    }
+    
     const result = await PostModel.findByIdAndDelete(id).exec();
     return !!result;
   } catch (error) {
     console.error(`Error deleting post ${id}:`, error);
-    throw error;
+    return false;
   }
 }

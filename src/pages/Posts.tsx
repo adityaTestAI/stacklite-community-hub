@@ -59,6 +59,7 @@ const Posts = () => {
         description: "Failed to load posts. Please try again later.",
         variant: "destructive",
       });
+      console.error("Error fetching posts:", postsError);
     }
   }, [postsError, toast]);
 

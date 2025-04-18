@@ -1,3 +1,4 @@
+
 import { connectToDatabase } from '@/lib/mongodb';
 import TagModel from '@/models/Tag';
 import { Tag as TagType } from '@/types';
@@ -9,13 +10,27 @@ const mockTags: TagType[] = [
   { id: "3", name: "javascript", count: 7 }
 ];
 
+// Check if we're in browser environment
+const isBrowser = typeof window !== 'undefined';
+
 // Get all tags
 export async function getAllTags(): Promise<TagType[]> {
   try {
     await connectToDatabase();
     
-    // In browser, return mock data
-
+    // In browser, fall back to API call
+    if (isBrowser) {
+      const response = await fetch('/api/tags');
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      const data = await response.json();
+      return data.map((tag: any) => ({
+        id: tag._id || tag.id,
+        name: tag.name,
+        count: tag.count
+      }));
+    }
     
     const tags = await TagModel.find({}).sort({ count: -1 }).exec();
     return tags.map(tag => ({
@@ -25,7 +40,7 @@ export async function getAllTags(): Promise<TagType[]> {
     }));
   } catch (error) {
     console.error("Error fetching tags:", error);
-    throw error;
+    return mockTags; // Fallback to mock data if all else fails
   }
 }
 
@@ -33,6 +48,20 @@ export async function getAllTags(): Promise<TagType[]> {
 export async function getTagByName(name: string): Promise<TagType | null> {
   try {
     await connectToDatabase();
+    
+    if (isBrowser) {
+      const response = await fetch(`/api/tags/${name}`);
+      if (!response.ok) {
+        if (response.status === 404) return null;
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      const tag = await response.json();
+      return {
+        id: tag._id || tag.id,
+        name: tag.name,
+        count: tag.count
+      };
+    }
     
     const tag = await TagModel.findOne({ name: name.toLowerCase() }).exec();
     if (!tag) return null;
@@ -44,7 +73,7 @@ export async function getTagByName(name: string): Promise<TagType | null> {
     };
   } catch (error) {
     console.error(`Error fetching tag ${name}:`, error);
-    throw error;
+    return null;
   }
 }
 
@@ -52,6 +81,28 @@ export async function getTagByName(name: string): Promise<TagType | null> {
 export async function createOrUpdateTags(tagNames: string[]): Promise<TagType[]> {
   try {
     await connectToDatabase();
+    
+    if (isBrowser) {
+      const response = await fetch('/api/tags', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ tags: tagNames }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error ${response.status}`);
+      }
+      
+      const data = await response.json();
+      return data.map((tag: any) => ({
+        id: tag._id || tag.id,
+        name: tag.name,
+        count: tag.count
+      }));
+    }
+    
     const updatedTags: TagType[] = [];
     
     for (const name of tagNames) {
@@ -74,7 +125,7 @@ export async function createOrUpdateTags(tagNames: string[]): Promise<TagType[]>
     return updatedTags;
   } catch (error) {
     console.error("Error creating/updating tags:", error);
-    throw error;
+    return [];
   }
 }
 
@@ -82,10 +133,19 @@ export async function createOrUpdateTags(tagNames: string[]): Promise<TagType[]>
 export async function deleteTag(id: string): Promise<boolean> {
   try {
     await connectToDatabase();
+    
+    if (isBrowser) {
+      const response = await fetch(`/api/tags/${id}`, {
+        method: 'DELETE',
+      });
+      
+      return response.ok;
+    }
+    
     const result = await TagModel.findByIdAndDelete(id).exec();
     return !!result;
   } catch (error) {
     console.error(`Error deleting tag ${id}:`, error);
-    throw error;
+    return false;
   }
 }

@@ -1,9 +1,13 @@
+
 import mongoose from 'mongoose';
 
-// Safely access environment variables in browser or Node.js context
+// Define the MongoDB URI
 const MONGODB_URI = typeof process !== 'undefined' && process.env.MONGODB_URI 
   ? process.env.MONGODB_URI 
   : "mongodb+srv://stack-overflow:stack-overflow@stack-overflow.vbr5mww.mongodb.net/stack-overflow";
+
+// Check if we're in browser environment
+const isBrowser = typeof window !== 'undefined';
 
 // Define the cached mongoose connection
 let cached = global.mongoose;
@@ -14,10 +18,10 @@ if (!cached) {
 
 async function connectToDatabase() {
   // In browser environment, we won't actually connect
-  // if (isBrowser) {
-  //   console.log("Running in browser environment, not connecting to MongoDB");
-  //   return null;
-  // }
+  if (isBrowser) {
+    console.log("Running in browser environment, cannot connect directly to MongoDB");
+    return null;
+  }
   
   if (cached.conn) {
     return cached.conn;

@@ -12,7 +12,6 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-
   origin: ['http://localhost:8080', 'https://localhost:8080'], // Add your frontend URL
   credentials: true
 }));
@@ -21,14 +20,13 @@ app.use(express.json());
 // Connect to database
 async function initializeDatabase() {
   try {
-    // Ensure models are imported to register schemas
-    console.log('Importing models...');
-    
+    console.log('Connecting to database...');
     const connection = await connectToDatabase();
-    console.log('Connected to MongoDB');
     
     if (connection) {
-      console.log('Database ready');
+      console.log('Connected to MongoDB');
+    } else {
+      console.log('Failed to get MongoDB connection');
     }
   } catch (error) {
     console.error('Failed to connect to MongoDB:', error);
@@ -108,6 +106,54 @@ app.post('/api/posts', async (req, res) => {
   }
 });
 
+app.patch('/api/posts/:id', async (req, res) => {
+  try {
+    const updateData = req.body;
+    
+    // If tags are being updated, update tag counts
+    if (updateData.tags && updateData.tags.length > 0) {
+      for (const name of updateData.tags) {
+        const normalizedName = name.toLowerCase().trim();
+        await TagModel.findOneAndUpdate(
+          { name: normalizedName },
+          { $inc: { count: 1 } },
+          { new: true, upsert: true }
+        ).exec();
+      }
+    }
+    
+    const post = await PostModel.findByIdAndUpdate(
+      req.params.id,
+      updateData,
+      { new: true }
+    ).exec();
+    
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    res.json(post);
+  } catch (error) {
+    console.error(`Error updating post ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to update post' });
+  }
+});
+
+app.delete('/api/posts/:id', async (req, res) => {
+  try {
+    const result = await PostModel.findByIdAndDelete(req.params.id).exec();
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    res.status(204).end();
+  } catch (error) {
+    console.error(`Error deleting post ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to delete post' });
+  }
+});
+
 // Tags routes
 app.get('/api/tags', async (req, res) => {
   try {
@@ -131,6 +177,44 @@ app.get('/api/tags/:name', async (req, res) => {
   } catch (error) {
     console.error(`Error fetching tag ${req.params.name}:`, error);
     res.status(500).json({ error: 'Failed to fetch tag' });
+  }
+});
+
+app.post('/api/tags', async (req, res) => {
+  try {
+    const { tags } = req.body;
+    const results = [];
+    
+    for (const name of tags) {
+      const normalizedName = name.toLowerCase().trim();
+      const tag = await TagModel.findOneAndUpdate(
+        { name: normalizedName },
+        { $inc: { count: 1 } },
+        { new: true, upsert: true }
+      ).exec();
+      
+      results.push(tag);
+    }
+    
+    res.status(201).json(results);
+  } catch (error) {
+    console.error('Error creating/updating tags:', error);
+    res.status(500).json({ error: 'Failed to create/update tags' });
+  }
+});
+
+app.delete('/api/tags/:id', async (req, res) => {
+  try {
+    const result = await TagModel.findByIdAndDelete(req.params.id).exec();
+    
+    if (!result) {
+      return res.status(404).json({ error: 'Tag not found' });
+    }
+    
+    res.status(204).end();
+  } catch (error) {
+    console.error(`Error deleting tag ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to delete tag' });
   }
 });
 

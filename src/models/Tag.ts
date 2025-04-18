@@ -1,3 +1,4 @@
+
 import mongoose, { Document, Schema } from "mongoose";
 
 export interface ITag extends Document {
@@ -19,10 +20,20 @@ const TagSchema = new Schema<ITag>({
   }
 });
 
-// Handle browser environment differently
+// Check if we're in browser environment
+const isBrowser = typeof window !== 'undefined';
+
 let TagModel;
 
-
+if (isBrowser) {
+  // In browser environment, create a mock model
+  TagModel = {
+    find: () => Promise.resolve([]),
+    findOne: () => Promise.resolve(null),
+    findOneAndUpdate: () => Promise.resolve(null),
+    findByIdAndDelete: () => Promise.resolve(null)
+  };
+} else {
   // In Node.js, use the actual Mongoose model
   try {
     // Check if the model already exists
@@ -31,5 +42,6 @@ let TagModel;
     // If model doesn't exist yet, create it
     TagModel = mongoose.model<ITag>("Tag", TagSchema);
   }
+}
 
 export default TagModel;
