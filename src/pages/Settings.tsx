@@ -72,46 +72,86 @@ const SettingsContent = () => {
     queryKey: ['user', currentUser?.uid],
     queryFn: () => getUserByUid(currentUser?.uid || ''),
     enabled: !!currentUser?.uid,
-    onSuccess: (data) => {
-      if (!data) {
-        // Create user if not exists
-        if (currentUser) {
-          createUserMutation.mutate({
-            uid: currentUser.uid,
-            email: currentUser.email || '',
-            displayName: currentUser.displayName || '',
-            photoURL: currentUser.photoURL || ''
-          });
+    meta: {
+      onSuccess: (data) => {
+        if (!data) {
+          // Create user if not exists
+          if (currentUser) {
+            createUserMutation.mutate({
+              uid: currentUser.uid,
+              email: currentUser.email || '',
+              displayName: currentUser.displayName || '',
+              photoURL: currentUser.photoURL || ''
+            });
+          }
+          return;
         }
-        return;
+        
+        // Set form values from fetched user data
+        setDisplayName(data.displayName || '');
+        setAvatarUrl(data.photoURL || '');
+        
+        // Set notification settings
+        if (data.notificationSettings) {
+          setEmailNotifications(data.notificationSettings.emailNotifications);
+          setWeeklyDigest(data.notificationSettings.weeklyDigest);
+          setUpvoteNotifications(data.notificationSettings.upvoteNotifications);
+        }
+        
+        // Set appearance settings
+        if (data.appearance) {
+          setDarkMode(data.appearance.darkMode);
+          setCompactView(data.appearance.compactView);
+          setCodeSyntaxHighlighting(data.appearance.codeSyntaxHighlighting);
+          
+          // Apply dark mode if set
+          if (data.appearance.darkMode) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
+        }
       }
-      
+    }
+  });
+
+  // Use useEffect to handle the success case since we can't use onSuccess directly
+  useEffect(() => {
+    if (userData) {
       // Set form values from fetched user data
-      setDisplayName(data.displayName || '');
-      setAvatarUrl(data.photoURL || '');
+      setDisplayName(userData.displayName || '');
+      setAvatarUrl(userData.photoURL || '');
       
       // Set notification settings
-      if (data.notificationSettings) {
-        setEmailNotifications(data.notificationSettings.emailNotifications);
-        setWeeklyDigest(data.notificationSettings.weeklyDigest);
-        setUpvoteNotifications(data.notificationSettings.upvoteNotifications);
+      if (userData.notificationSettings) {
+        setEmailNotifications(userData.notificationSettings.emailNotifications);
+        setWeeklyDigest(userData.notificationSettings.weeklyDigest);
+        setUpvoteNotifications(userData.notificationSettings.upvoteNotifications);
       }
       
       // Set appearance settings
-      if (data.appearance) {
-        setDarkMode(data.appearance.darkMode);
-        setCompactView(data.appearance.compactView);
-        setCodeSyntaxHighlighting(data.appearance.codeSyntaxHighlighting);
+      if (userData.appearance) {
+        setDarkMode(userData.appearance.darkMode);
+        setCompactView(userData.appearance.compactView);
+        setCodeSyntaxHighlighting(userData.appearance.codeSyntaxHighlighting);
         
         // Apply dark mode if set
-        if (data.appearance.darkMode) {
+        if (userData.appearance.darkMode) {
           document.documentElement.classList.add('dark');
         } else {
           document.documentElement.classList.remove('dark');
         }
       }
+    } else if (currentUser && !isLoadingUser) {
+      // Create user if not exists and query has completed but no data returned
+      createUserMutation.mutate({
+        uid: currentUser.uid,
+        email: currentUser.email || '',
+        displayName: currentUser.displayName || '',
+        photoURL: currentUser.photoURL || ''
+      });
     }
-  });
+  }, [userData, currentUser, isLoadingUser]);
 
   // Create user mutation
   const createUserMutation = useMutation({
