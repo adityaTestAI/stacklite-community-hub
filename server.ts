@@ -1,17 +1,18 @@
 
 import express from 'express';
 import cors from 'cors';
-import { connectToDatabase } from './lib/mongodb';
+import { connectToDatabase } from './src/lib/mongodb';
 import mongoose from 'mongoose';
-import PostModel from './models/Post';
-import TagModel from './models/Tag';
-import UserModel from './models/User';
+import PostModel from './src/models/Post';
+import TagModel from './src/models/Tag';
+import UserModel from './src/models/User';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
+
   origin: ['http://localhost:8080', 'https://localhost:8080'], // Add your frontend URL
   credentials: true
 }));
