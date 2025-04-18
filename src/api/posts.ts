@@ -1,5 +1,4 @@
-
-import { connectToDatabase, isBrowser } from '@/lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb';
 import PostModel, { AnswerDocument } from '@/models/Post';
 import { createOrUpdateTags } from './tags';
 import { Post as PostType, Answer as AnswerType } from '@/types';
@@ -27,10 +26,6 @@ export async function getAllPosts(): Promise<PostType[]> {
     await connectToDatabase();
     
     // In browser, return mock data
-    if (isBrowser) {
-      console.log("Browser environment detected, returning mock posts data");
-      return mockPosts;
-    }
     
     const posts = await PostModel.find({}).sort({ createdAt: -1 }).exec();
     

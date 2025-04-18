@@ -1,5 +1,4 @@
-
-import { connectToDatabase, isBrowser } from '@/lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb';
 import TagModel from '@/models/Tag';
 import { Tag as TagType } from '@/types';
 
@@ -16,10 +15,7 @@ export async function getAllTags(): Promise<TagType[]> {
     await connectToDatabase();
     
     // In browser, return mock data
-    if (isBrowser) {
-      console.log("Browser environment detected, returning mock tags data");
-      return mockTags;
-    }
+
     
     const tags = await TagModel.find({}).sort({ count: -1 }).exec();
     return tags.map(tag => ({
@@ -37,12 +33,6 @@ export async function getAllTags(): Promise<TagType[]> {
 export async function getTagByName(name: string): Promise<TagType | null> {
   try {
     await connectToDatabase();
-    
-    // In browser, return mock data if it matches
-    if (isBrowser) {
-      const mockTag = mockTags.find(t => t.name.toLowerCase() === name.toLowerCase());
-      return mockTag || null;
-    }
     
     const tag = await TagModel.findOne({ name: name.toLowerCase() }).exec();
     if (!tag) return null;
