@@ -1,57 +1,19 @@
 
-import { connectToDatabase } from '@/lib/mongodb';
-import UserModel from '@/models/User';
 import { User as UserType } from '@/types';
 
-// Fallback data for browser environment
-const mockUser: UserType = {
-  uid: "sample-uid",
-  email: "sample@example.com",
-  displayName: "Sample User",
-  photoURL: "",
-  notificationSettings: {
-    emailNotifications: true,
-    weeklyDigest: true,
-    upvoteNotifications: true
-  },
-  appearance: {
-    darkMode: false,
-    compactView: false,
-    codeSyntaxHighlighting: true
-  }
-};
-
-// Check if we're in browser environment
-const isBrowser = typeof window !== 'undefined';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 // Get user by firebase UID
 export async function getUserByUid(uid: string): Promise<UserType | null> {
   try {
-    await connectToDatabase();
+    const response = await fetch(`${API_BASE_URL}/users/${uid}`);
     
-    // In browser, make API request
-    if (isBrowser) {
-      const response = await fetch(`/api/users/${uid}`);
-      if (!response.ok) {
-        if (response.status === 404) return null;
-        throw new Error(`HTTP error ${response.status}`);
-      }
-      
-      const user = await response.json();
-      return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        notificationSettings: user.notificationSettings,
-        appearance: user.appearance
-      };
+    if (!response.ok) {
+      if (response.status === 404) return null;
+      throw new Error(`HTTP error ${response.status}`);
     }
     
-    const user = await UserModel.findOne({ uid }).exec();
-    
-    if (!user) return null;
-    
+    const user = await response.json();
     return {
       uid: user.uid,
       email: user.email,
@@ -69,43 +31,19 @@ export async function getUserByUid(uid: string): Promise<UserType | null> {
 // Create or update user
 export async function createOrUpdateUser(userData: Partial<UserType> & { uid: string }): Promise<UserType> {
   try {
-    await connectToDatabase();
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(userData),
+    });
     
-    if (isBrowser) {
-      const response = await fetch('/api/users', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(userData),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
-      
-      const user = await response.json();
-      return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        notificationSettings: user.notificationSettings,
-        appearance: user.appearance
-      };
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
     }
     
-    const { uid, ...restData } = userData;
-    
-    const user = await UserModel.findOneAndUpdate(
-      { uid },
-      { 
-        ...restData,
-        updatedAt: new Date()
-      },
-      { new: true, upsert: true, setDefaultsOnInsert: true }
-    ).exec();
-    
+    const user = await response.json();
     return {
       uid: user.uid,
       email: user.email,
@@ -123,43 +61,19 @@ export async function createOrUpdateUser(userData: Partial<UserType> & { uid: st
 // Update user profile
 export async function updateUserProfile(uid: string, profileData: { displayName?: string; photoURL?: string }): Promise<UserType | null> {
   try {
-    await connectToDatabase();
+    const response = await fetch(`${API_BASE_URL}/users/${uid}/profile`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profileData),
+    });
     
-    if (isBrowser) {
-      const response = await fetch(`/api/users/${uid}/profile`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(profileData),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
-      
-      const user = await response.json();
-      return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        notificationSettings: user.notificationSettings,
-        appearance: user.appearance
-      };
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
     }
     
-    const user = await UserModel.findOneAndUpdate(
-      { uid },
-      { 
-        ...profileData,
-        updatedAt: new Date()
-      },
-      { new: true }
-    ).exec();
-    
-    if (!user) return null;
-    
+    const user = await response.json();
     return {
       uid: user.uid,
       email: user.email,
@@ -177,46 +91,19 @@ export async function updateUserProfile(uid: string, profileData: { displayName?
 // Update notification settings
 export async function updateNotificationSettings(uid: string, settings: Partial<UserType['notificationSettings']>): Promise<UserType | null> {
   try {
-    await connectToDatabase();
+    const response = await fetch(`${API_BASE_URL}/users/${uid}/notifications`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(settings),
+    });
     
-    if (isBrowser) {
-      const response = await fetch(`/api/users/${uid}/notifications`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(settings),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
-      
-      const user = await response.json();
-      return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        notificationSettings: user.notificationSettings,
-        appearance: user.appearance
-      };
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
     }
     
-    const user = await UserModel.findOneAndUpdate(
-      { uid },
-      { 
-        $set: Object.entries(settings).reduce((acc, [key, value]) => {
-          acc[`notificationSettings.${key}`] = value;
-          return acc;
-        }, {} as Record<string, any>),
-        updatedAt: new Date()
-      },
-      { new: true }
-    ).exec();
-    
-    if (!user) return null;
-    
+    const user = await response.json();
     return {
       uid: user.uid,
       email: user.email,
@@ -234,46 +121,19 @@ export async function updateNotificationSettings(uid: string, settings: Partial<
 // Update appearance settings
 export async function updateAppearanceSettings(uid: string, settings: Partial<UserType['appearance']>): Promise<UserType | null> {
   try {
-    await connectToDatabase();
+    const response = await fetch(`${API_BASE_URL}/users/${uid}/appearance`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(settings),
+    });
     
-    if (isBrowser) {
-      const response = await fetch(`/api/users/${uid}/appearance`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(settings),
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error ${response.status}`);
-      }
-      
-      const user = await response.json();
-      return {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        notificationSettings: user.notificationSettings,
-        appearance: user.appearance
-      };
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
     }
     
-    const user = await UserModel.findOneAndUpdate(
-      { uid },
-      { 
-        $set: Object.entries(settings).reduce((acc, [key, value]) => {
-          acc[`appearance.${key}`] = value;
-          return acc;
-        }, {} as Record<string, any>),
-        updatedAt: new Date()
-      },
-      { new: true }
-    ).exec();
-    
-    if (!user) return null;
-    
+    const user = await response.json();
     return {
       uid: user.uid,
       email: user.email,

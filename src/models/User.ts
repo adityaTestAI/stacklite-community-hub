@@ -80,58 +80,6 @@ const UserSchema = new Schema<IUser>(
   { timestamps: true }
 );
 
-// Check if we're in browser environment
-const isBrowser = typeof window !== 'undefined';
-
-let UserModel;
-
-if (isBrowser) {
-  // In browser environment, create a mock model
-  UserModel = {
-    findOne: () => Promise.resolve(null),
-    findOneAndUpdate: () => Promise.resolve({
-      uid: 'mock-uid',
-      email: 'mock@example.com',
-      displayName: 'Mock User',
-      photoURL: '',
-      notificationSettings: {
-        emailNotifications: true,
-        weeklyDigest: true,
-        upvoteNotifications: true
-      },
-      appearance: {
-        darkMode: false,
-        compactView: false,
-        codeSyntaxHighlighting: true
-      }
-    }),
-    create: () => Promise.resolve({
-      _id: 'mock-id',
-      uid: 'mock-uid',
-      email: 'mock@example.com',
-      displayName: 'Mock User',
-      photoURL: '',
-      notificationSettings: {
-        emailNotifications: true,
-        weeklyDigest: true,
-        upvoteNotifications: true
-      },
-      appearance: {
-        darkMode: false,
-        compactView: false,
-        codeSyntaxHighlighting: true
-      }
-    })
-  };
-} else {
-  // In Node.js, use the actual Mongoose model
-  try {
-    // Check if the model already exists
-    UserModel = mongoose.models.User;
-  } catch (error) {
-    // If model doesn't exist yet, create it
-    UserModel = mongoose.model<IUser>("User", UserSchema);
-  }
-}
+const UserModel = mongoose.models.User || mongoose.model<IUser>("User", UserSchema);
 
 export default UserModel;

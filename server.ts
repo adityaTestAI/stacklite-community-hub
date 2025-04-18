@@ -2,7 +2,6 @@
 import express from 'express';
 import cors from 'cors';
 import { connectToDatabase } from './src/lib/mongodb';
-import mongoose from 'mongoose';
 import PostModel from './src/models/Post';
 import TagModel from './src/models/Tag';
 import UserModel from './src/models/User';
@@ -12,7 +11,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({
-  origin: ['http://localhost:8080', 'https://localhost:8080'], // Add your frontend URL
+  origin: ['http://localhost:8080', 'https://localhost:8080', 'http://localhost:5173'], // Add Vite's default port
   credentials: true
 }));
 app.use(express.json());
@@ -347,18 +346,6 @@ app.patch('/api/users/:uid/appearance', async (req, res) => {
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-});
-
-// Handle graceful shutdown
-process.on('SIGINT', async () => {
-  try {
-    await mongoose.connection.close();
-    console.log('MongoDB connection closed');
-    process.exit(0);
-  } catch (error) {
-    console.error('Error during shutdown:', error);
-    process.exit(1);
-  }
 });
 
 export default app;
