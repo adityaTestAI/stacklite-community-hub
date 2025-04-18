@@ -1,11 +1,4 @@
-
 import mongoose from 'mongoose';
-
-// Determine if we're in a browser environment
-const isBrowser = typeof window !== 'undefined';
-
-// Is this running on the server?
-const isServer = !isBrowser && process.env.NODE_ENV !== 'test';
 
 // Safely access environment variables in browser or Node.js context
 const MONGODB_URI = typeof process !== 'undefined' && process.env.MONGODB_URI 
@@ -21,10 +14,10 @@ if (!cached) {
 
 async function connectToDatabase() {
   // In browser environment, we won't actually connect
-  if (isBrowser) {
-    console.log("Running in browser environment, not connecting to MongoDB");
-    return null;
-  }
+  // if (isBrowser) {
+  //   console.log("Running in browser environment, not connecting to MongoDB");
+  //   return null;
+  // }
   
   if (cached.conn) {
     return cached.conn;
@@ -45,32 +38,4 @@ async function connectToDatabase() {
   return cached.conn;
 }
 
-// Mock functions for browser environment
-const createBrowserMock = () => {
-  return {
-    find: () => ({ 
-      sort: () => ({ 
-        exec: async () => [] 
-      }) 
-    }),
-    findOne: () => ({ 
-      exec: async () => null 
-    }),
-    findById: () => ({ 
-      exec: async () => null 
-    }),
-    findOneAndUpdate: () => ({ 
-      exec: async () => null 
-    }),
-    findByIdAndUpdate: () => ({
-      exec: async () => null
-    }),
-    findByIdAndDelete: () => ({
-      exec: async () => null
-    }),
-    create: async () => ({}),
-    save: async () => ({})
-  };
-};
-
-export { connectToDatabase, MONGODB_URI, isBrowser, isServer, createBrowserMock };
+export { connectToDatabase };

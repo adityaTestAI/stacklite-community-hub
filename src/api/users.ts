@@ -1,5 +1,4 @@
-
-import { connectToDatabase, isBrowser } from '@/lib/mongodb';
+import { connectToDatabase } from '@/lib/mongodb';
 import UserModel from '@/models/User';
 import { User as UserType } from '@/types';
 
@@ -27,10 +26,7 @@ export async function getUserByUid(uid: string): Promise<UserType | null> {
     await connectToDatabase();
     
     // In browser, return mock data
-    if (isBrowser) {
-      console.log(`Browser environment detected, returning mock user data for ${uid}`);
-      return mockUser;
-    }
+    
     
     const user = await UserModel.findOne({ uid }).exec();
     
@@ -54,15 +50,6 @@ export async function getUserByUid(uid: string): Promise<UserType | null> {
 export async function createOrUpdateUser(userData: Partial<UserType> & { uid: string }): Promise<UserType> {
   try {
     await connectToDatabase();
-    
-    // In browser, return mock data
-    if (isBrowser) {
-      console.log(`Browser environment detected, returning mock user data for create/update ${userData.uid}`);
-      return {
-        ...mockUser,
-        ...userData
-      };
-    }
     
     const { uid, ...restData } = userData;
     
@@ -88,6 +75,7 @@ export async function createOrUpdateUser(userData: Partial<UserType> & { uid: st
     throw error;
   }
 }
+
 
 // Update user profile
 export async function updateUserProfile(uid: string, profileData: { displayName?: string; photoURL?: string }): Promise<UserType | null> {

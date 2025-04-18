@@ -1,11 +1,8 @@
-
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { auth, onAuthStateChanged } from "@/lib/firebase";
 import { User } from "@/types";
 import { useToast } from "@/hooks/use-toast";
-import { toast } from "@/components/ui/sonner";
 import { createOrUpdateUser } from "@/api/users";
-import { isBrowser } from "@/lib/mongodb";
 
 interface AuthContextType {
   currentUser: User | null;
@@ -19,7 +16,6 @@ export const useAuth = () => useContext(AuthContext);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast: showToast } = useToast();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -41,10 +37,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             displayName: user.displayName || '',
             photoURL: user.photoURL || ''
           });
-          
-          if (isBrowser) {
-            console.log("Browser environment detected, user data not actually saved to database");
-          }
         } catch (error) {
           console.error("Error updating user in database:", error);
         }
