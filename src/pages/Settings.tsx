@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -17,6 +16,7 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { auth, updateProfile } from "@/lib/firebase";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
@@ -58,12 +58,12 @@ const Settings = () => {
 
 const SettingsContent = () => {
   const { currentUser } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [displayName, setDisplayName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(true);
   const [upvoteNotifications, setUpvoteNotifications] = useState(true);
-  const [darkMode, setDarkMode] = useState(false);
   const [compactView, setCompactView] = useState(false);
   const [codeSyntaxHighlighting, setCodeSyntaxHighlighting] = useState(true);
 
@@ -72,47 +72,6 @@ const SettingsContent = () => {
     queryKey: ['user', currentUser?.uid],
     queryFn: () => getUserByUid(currentUser?.uid || ''),
     enabled: !!currentUser?.uid,
-    meta: {
-      onSuccess: (data) => {
-        if (!data) {
-          // Create user if not exists
-          if (currentUser) {
-            createUserMutation.mutate({
-              uid: currentUser.uid,
-              email: currentUser.email || '',
-              displayName: currentUser.displayName || '',
-              photoURL: currentUser.photoURL || ''
-            });
-          }
-          return;
-        }
-        
-        // Set form values from fetched user data
-        setDisplayName(data.displayName || '');
-        setAvatarUrl(data.photoURL || '');
-        
-        // Set notification settings
-        if (data.notificationSettings) {
-          setEmailNotifications(data.notificationSettings.emailNotifications);
-          setWeeklyDigest(data.notificationSettings.weeklyDigest);
-          setUpvoteNotifications(data.notificationSettings.upvoteNotifications);
-        }
-        
-        // Set appearance settings
-        if (data.appearance) {
-          setDarkMode(data.appearance.darkMode);
-          setCompactView(data.appearance.compactView);
-          setCodeSyntaxHighlighting(data.appearance.codeSyntaxHighlighting);
-          
-          // Apply dark mode if set
-          if (data.appearance.darkMode) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-        }
-      }
-    }
   });
 
   // Use useEffect to handle the success case since we can't use onSuccess directly
@@ -131,16 +90,9 @@ const SettingsContent = () => {
       
       // Set appearance settings
       if (userData.appearance) {
-        setDarkMode(userData.appearance.darkMode);
+        // Don't set darkMode here, it's managed by ThemeContext
         setCompactView(userData.appearance.compactView);
         setCodeSyntaxHighlighting(userData.appearance.codeSyntaxHighlighting);
-        
-        // Apply dark mode if set
-        if (userData.appearance.darkMode) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
       }
     } else if (currentUser && !isLoadingUser) {
       // Create user if not exists and query has completed but no data returned
@@ -262,21 +214,12 @@ const SettingsContent = () => {
   };
 
   const handleToggleDarkMode = () => {
-    const newValue = !darkMode;
-    setDarkMode(newValue);
-    
-    // Update document class
-    if (newValue) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-    
-    appearanceMutation.mutate({ darkMode: newValue });
+    const newValue = theme === "dark" ? "light" : "dark";
+    setTheme(newValue);
     
     toast({
-      title: `${newValue ? "Dark" : "Light"} mode activated`,
-      description: `Theme has been switched to ${newValue ? "dark" : "light"} mode.`
+      title: `${newValue === "dark" ? "Dark" : "Light"} mode activated`,
+      description: `Theme has been switched to ${newValue === "dark" ? "dark" : "light"} mode.`
     });
   };
 
@@ -473,9 +416,8 @@ const SettingsContent = () => {
                     </p>
                   </div>
                   <Switch 
-                    checked={darkMode}
+                    checked={theme === "dark"}
                     onCheckedChange={handleToggleDarkMode}
-                    disabled={appearanceMutation.isPending}
                   />
                 </div>
                 

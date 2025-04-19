@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -34,6 +33,7 @@ import {
   Plus
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { auth, signOut } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import AuthModal from "@/components/auth/AuthModal";
@@ -42,22 +42,13 @@ import { motion } from "framer-motion";
 
 const Navbar: React.FC = () => {
   const { currentUser } = useAuth();
+  const { theme, toggleTheme, loading: themeLoading } = useTheme();
   const { toast } = useToast();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-
-  const toggleTheme = () => {
-    if (isDarkMode) {
-      document.documentElement.classList.remove('dark');
-    } else {
-      document.documentElement.classList.add('dark');
-    }
-    setIsDarkMode(!isDarkMode);
-  };
 
   const handleLogout = async () => {
     try {
@@ -123,9 +114,17 @@ const Navbar: React.FC = () => {
             variant="outline" 
             size="icon"
             onClick={toggleTheme}
+            disabled={themeLoading}
             className="rounded-full"
+            aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {isDarkMode ? <Sun size={18} /> : <Moon size={18} />}
+            {themeLoading ? (
+              <span className="animate-pulse">...</span>
+            ) : theme === 'dark' ? (
+              <Sun size={18} />
+            ) : (
+              <Moon size={18} />
+            )}
           </Button>
           
           <Button 
