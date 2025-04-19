@@ -1,7 +1,7 @@
 
 import { User as UserType } from '@/types';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+import { API_BASE_URL } from '@/config'
 
 // Get user by firebase UID
 export async function getUserByUid(uid: string): Promise<UserType | null> {
