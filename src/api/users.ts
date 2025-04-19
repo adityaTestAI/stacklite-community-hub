@@ -1,6 +1,7 @@
 
 import { User as UserType } from '@/types';
-import { API_BASE_URL } from '@/config';
+
+import { API_BASE_URL } from '@/config'
 
 // Get user by firebase UID
 export async function getUserByUid(uid: string): Promise<UserType | null> {
@@ -144,58 +145,5 @@ export async function updateAppearanceSettings(uid: string, settings: Partial<Us
   } catch (error) {
     console.error(`Error updating appearance settings for user ${uid}:`, error);
     return null;
-  }
-}
-
-// Update profile with image upload
-export async function updateUserProfileWithImage(uid: string, formData: FormData): Promise<UserType | null> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users/${uid}/profile/image`, {
-      method: 'POST',
-      body: formData,
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-    
-    const user = await response.json();
-    return {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      notificationSettings: user.notificationSettings,
-      appearance: user.appearance
-    };
-  } catch (error) {
-    console.error(`Error updating user profile image ${uid}:`, error);
-    throw error; // Re-throw error so it can be handled by the component
-  }
-}
-
-// Delete profile image
-export async function deleteUserProfileImage(uid: string): Promise<UserType | null> {
-  try {
-    const response = await fetch(`${API_BASE_URL}/users/${uid}/profile/image`, {
-      method: 'DELETE',
-    });
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-    
-    const user = await response.json();
-    return {
-      uid: user.uid,
-      email: user.email,
-      displayName: user.displayName,
-      photoURL: user.photoURL,
-      notificationSettings: user.notificationSettings,
-      appearance: user.appearance
-    };
-  } catch (error) {
-    console.error(`Error deleting user profile image ${uid}:`, error);
-    throw error; // Re-throw error so it can be handled by the component
   }
 }

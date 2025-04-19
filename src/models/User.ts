@@ -57,7 +57,7 @@ const UserSchema = new Schema<IUser>(
     appearance: {
       darkMode: {
         type: Boolean,
-        default: true
+        default: false
       },
       compactView: {
         type: Boolean,
