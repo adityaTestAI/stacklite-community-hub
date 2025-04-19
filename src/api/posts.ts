@@ -142,6 +142,7 @@ export async function createPost(postData: Omit<PostType, 'id' | 'createdAt' | '
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
+      upvotedBy: post.upvotedBy || [],
       answers: []
     };
   } catch (error) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -23,7 +22,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 
-// Define the validation schema
 const questionSchema = z.object({
   title: z.string().min(15, "Title must be at least 15 characters long").max(150, "Title cannot exceed 150 characters"),
   content: z.string().min(30, "Question details must be at least 30 characters long"),
@@ -40,17 +38,15 @@ const AskQuestion = () => {
   const [submitting, setSubmitting] = useState(false);
   const [hasTagsError, setHasTagsError] = useState(false);
 
-  // Define form with validation
   const form = useForm<QuestionFormValues>({
     resolver: zodResolver(questionSchema),
     defaultValues: {
       title: "",
       content: "",
     },
-    mode: "onBlur", // Validate on blur for better UX
+    mode: "onBlur",
   });
 
-  // Check if user is logged in
   useEffect(() => {
     if (!currentUser) {
       toast({
@@ -76,7 +72,6 @@ const AskQuestion = () => {
   };
 
   const onSubmit = async (data: QuestionFormValues) => {
-    // Validate tags
     if (tags.length === 0) {
       setHasTagsError(true);
       return;
@@ -92,7 +87,8 @@ const AskQuestion = () => {
         authorName: currentUser?.displayName || "Anonymous User",
         tags,
         upvotes: 0,
-        views: 1
+        views: 1,
+        upvotedBy: []
       });
       
       toast({

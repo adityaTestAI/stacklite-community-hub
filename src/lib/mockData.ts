@@ -12,7 +12,8 @@ const generateAnswers = (count: number): Answer[] => {
     authorId: generateId(),
     authorName: `User${Math.floor(Math.random() * 1000)}`,
     createdAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString(),
-    upvotes: Math.floor(Math.random() * 50)
+    upvotes: Math.floor(Math.random() * 50),
+    upvotedBy: [] // Initialize with empty array
   }));
 };
 
@@ -42,7 +43,8 @@ export const mockPosts: Post[] = [
     tags: ['react', 'javascript', 'hooks'],
     upvotes: 15,
     views: 230,
-    answers: generateAnswers(3)
+    answers: generateAnswers(3),
+    upvotedBy: [] // Add required property
   },
   {
     id: '2',
@@ -54,7 +56,8 @@ export const mockPosts: Post[] = [
     tags: ['typescript', 'javascript'],
     upvotes: 22,
     views: 450,
-    answers: generateAnswers(5)
+    answers: generateAnswers(5),
+    upvotedBy: [] // Add required property
   },
   {
     id: '3',
@@ -66,7 +69,8 @@ export const mockPosts: Post[] = [
     tags: ['mongodb', 'node.js', 'database'],
     upvotes: 8,
     views: 120,
-    answers: generateAnswers(2)
+    answers: generateAnswers(2),
+    upvotedBy: [] // Add required property
   },
   {
     id: '4',
@@ -78,7 +82,8 @@ export const mockPosts: Post[] = [
     tags: ['tailwind', 'css', 'optimization'],
     upvotes: 12,
     views: 280,
-    answers: generateAnswers(4)
+    answers: generateAnswers(4),
+    upvotedBy: [] // Add required property
   },
   {
     id: '5',
@@ -90,6 +95,7 @@ export const mockPosts: Post[] = [
     tags: ['javascript', 'async', 'error-handling'],
     upvotes: 30,
     views: 620,
-    answers: generateAnswers(7)
+    answers: generateAnswers(7),
+    upvotedBy: [] // Add required property
   }
 ];
