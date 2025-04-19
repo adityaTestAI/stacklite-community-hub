@@ -1,34 +1,24 @@
-
 import mongoose from 'mongoose';
+import * as dotenv from 'dotenv';
 
-// Define the MongoDB URI
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb+srv://stack-overflow:stack-overflow@stack-overflow.vbr5mww.mongodb.net/stack-overflow";
+dotenv.config();
 
-// Define the cached mongoose connection
-let cached = global.mongoose;
+const MONGODB_URI = process.env.MONGODB_URI;
 
-if (!cached) {
-  cached = global.mongoose = { conn: null, promise: null };
-}
+export async function connectToDatabase() {
+  console.log("Connecting to database...");
 
-async function connectToDatabase() {
-  if (cached.conn) {
-    return cached.conn;
+  if (!MONGODB_URI) {
+    console.error("❌ MongoDB URI not found in environment variables");
+    process.exit(1);
   }
 
-  if (!cached.promise) {
-    const opts = {
-      bufferCommands: false,
-    };
+  try {
+    await mongoose.connect(MONGODB_URI);
 
-    console.log(`Connecting to MongoDB at: ${MONGODB_URI}`);
-    cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
-      console.log("MongoDB connection established");
-      return mongoose;
-    });
+    console.log("✅ Connected to MongoDB");
+  } catch (error) {
+    console.error("❌ Failed to connect to MongoDB:", error);
+    process.exit(1);
   }
-  cached.conn = await cached.promise;
-  return cached.conn;
 }
-
-export { connectToDatabase };
