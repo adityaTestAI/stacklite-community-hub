@@ -1,20 +1,18 @@
-import React, { useRef, useState, useEffect } from 'react';
+
+import React, { useRef, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
 import { Trash2, Upload, Loader2 } from "lucide-react";
 import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { API_BASE_URL } from '@/config';
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose
+} from "@/components/ui/dialog";
 
 interface ImageUploadProps {
   currentImage: string | null;
@@ -36,16 +34,11 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(currentImage);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   React.useEffect(() => {
     setImagePreview(currentImage);
   }, [currentImage]);
-
-  const getImageUrl = (url: string | null) => {
-    if (!url) return undefined;
-    if (url.startsWith('http') || url.startsWith('data:')) return url;
-    return `${API_BASE_URL}${url}`;
-  };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -69,6 +62,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       return;
     }
 
+    // Show preview immediately
     const reader = new FileReader();
     reader.onload = (e) => {
       setImagePreview(e.target?.result as string);
@@ -111,18 +105,19 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       });
     } finally {
       setIsDeleting(false);
+      setShowDeleteDialog(false);
     }
   };
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      <Avatar className="w-32 h-32 cursor-pointer hover:opacity-90 transition-opacity relative">
+      <Avatar className="w-32 h-32 cursor-pointer hover:opacity-90 transition-opacity relative" onClick={() => fileInputRef.current?.click()}>
         {isUploading && (
           <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded-full z-10">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         )}
-        <AvatarImage src={getImageUrl(imagePreview) || undefined} />
+        <AvatarImage src={imagePreview || undefined} alt={displayName} />
         <AvatarFallback className="text-2xl">
           {displayName?.charAt(0).toUpperCase() || "U"}
         </AvatarFallback>
@@ -140,32 +135,15 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         </Button>
 
         {imagePreview && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button
-                variant="destructive"
-                className="flex items-center gap-2"
-                disabled={isDeleting}
-              >
-                <Trash2 className="h-4 w-4" />
-                {isDeleting ? "Removing..." : "Remove"}
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will remove your profile image. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeleteClick}>
-                  Remove Image
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+          <Button
+            variant="destructive"
+            className="flex items-center gap-2"
+            disabled={isDeleting}
+            onClick={() => setShowDeleteDialog(true)}
+          >
+            <Trash2 className="h-4 w-4" />
+            {isDeleting ? "Removing..." : "Remove"}
+          </Button>
         )}
       </div>
 
@@ -176,9 +154,34 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         onChange={handleFileChange}
         className="hidden"
       />
+      
       <p className="text-xs text-muted-foreground">
         Maximum file size: 2MB. Supported formats: JPG, PNG, GIF
       </p>
+
+      {/* Delete confirmation dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Remove Profile Image</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove your profile image? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex justify-end gap-2">
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteClick}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Removing..." : "Remove Image"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

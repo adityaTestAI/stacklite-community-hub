@@ -37,24 +37,8 @@ const corsOptions = {
   optionsSuccessStatus: 200
 };
 
-// Middleware
-app.use(cors(corsOptions));
-app.use(express.json()); // Add this line to parse JSON request bodies
-
-// Configure multer for image upload
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    const uploadDir = 'uploads/';
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir);
-    }
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    cb(null, `${Date.now()}-${file.originalname}`);
-  }
-});
-
+// Configure multer for temporary file upload
+const storage = multer.memoryStorage();
 const upload = multer({ 
   storage: storage,
   limits: {
@@ -69,6 +53,10 @@ const upload = multer({
     cb(null, true);
   }
 });
+
+// Middleware
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '10mb' })); // Increased limit for base64 images
 
 // Connect to database
 async function initializeDatabase() {
@@ -476,17 +464,21 @@ app.patch('/api/users/:uid/appearance', async (req, res): Promise<any> => {
   }
 });
 
-// Add image upload route
+// Add image upload route for base64
 app.post('/api/users/:uid/profile/image', upload.single('image'), async (req, res): Promise<any> => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
 
+    // Convert file buffer to base64
+    const fileBuffer = req.file.buffer;
+    const base64Image = `data:${req.file.mimetype};base64,${fileBuffer.toString('base64')}`;
+    
     const user = await UserModel.findOneAndUpdate(
       { uid: req.params.uid },
       { 
-        photoURL: `/uploads/${req.file.filename}`,
+        photoURL: base64Image,
         updatedAt: new Date()
       },
       { new: true }
@@ -512,15 +504,7 @@ app.delete('/api/users/:uid/profile/image', async (req, res): Promise<any> => {
       return res.status(404).json({ error: 'User not found' });
     }
     
-    // Delete the old image file if it exists
-    if (user.photoURL) {
-      const imagePath = path.join(__dirname, user.photoURL);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
-      }
-    }
-    
-    user.photoURL = null;
+    user.photoURL = '';
     user.updatedAt = new Date();
     await user.save();
     
