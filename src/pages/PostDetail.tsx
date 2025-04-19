@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -16,7 +15,7 @@ import {
   Eye,
   Calendar 
 } from "lucide-react";
-import { getPostById, updatePost } from "@/api/posts";
+import { getPostById, updatePost, togglePostUpvote, toggleAnswerUpvote } from "@/api/posts";
 import RichTextEditor from "@/components/editor/RichTextEditor";
 
 const PostDetail = () => {
@@ -27,6 +26,7 @@ const PostDetail = () => {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("answers");
   const [submitting, setSubmitting] = useState(false);
+  const [upvoting, setUpvoting] = useState(false);
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -36,6 +36,10 @@ const PostDetail = () => {
         setLoading(true);
         const fetchedPost = await getPostById(postId);
         if (fetchedPost) {
+          // Ensure upvotedBy is initialized
+          if (!fetchedPost.upvotedBy) {
+            fetchedPost.upvotedBy = [];
+          }
           setPost(fetchedPost);
         }
       } catch (error) {
@@ -53,7 +57,7 @@ const PostDetail = () => {
     fetchPost();
   }, [postId]);
 
-  const handleUpvote = () => {
+  const handleUpvote = async () => {
     if (!currentUser) {
       toast({
         title: "Authentication required",
@@ -63,22 +67,97 @@ const PostDetail = () => {
       return;
     }
 
-    if (!post) return;
+    if (!post || !postId) return;
+    
+    if (upvoting) return; // Prevent multiple clicks
+    setUpvoting(true);
 
-    // Update local state optimistically
-    setPost(prev => {
-      if (!prev) return null;
-      return {
-        ...prev,
-        upvotes: prev.upvotes + 1
-      };
-    });
+    try {
+      const result = await togglePostUpvote(postId, currentUser.uid);
+      
+      if (result) {
+        // Update local state
+        setPost(prev => {
+          if (!prev) return null;
+          return {
+            ...prev,
+            upvotes: result.upvotes,
+            upvotedBy: result.upvotedBy
+          };
+        });
 
-    // In a real app, we would call an API to upvote the post
-    toast({
-      title: "Post upvoted",
-      description: "Thank you for your contribution!",
-    });
+        const hasUpvoted = result.upvotedBy.includes(currentUser.uid);
+        toast({
+          title: hasUpvoted ? "Post upvoted" : "Upvote removed",
+          description: hasUpvoted 
+            ? "Thank you for your contribution!" 
+            : "Your upvote has been removed.",
+        });
+      }
+    } catch (error) {
+      console.error("Error upvoting post:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upvote post. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpvoting(false);
+    }
+  };
+
+  const handleAnswerUpvote = async (answerId: string) => {
+    if (!currentUser) {
+      toast({
+        title: "Authentication required",
+        description: "You need to log in to upvote answers.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!post || !postId) return;
+
+    try {
+      const result = await toggleAnswerUpvote(postId, answerId, currentUser.uid);
+      
+      if (result) {
+        // Update local state
+        setPost(prev => {
+          if (!prev) return null;
+          
+          const updatedAnswers = prev.answers.map(answer => 
+            answer.id === answerId 
+              ? { 
+                  ...answer, 
+                  upvotes: result.upvotes,
+                  upvotedBy: result.upvotedBy
+                }
+              : answer
+          );
+          
+          return {
+            ...prev,
+            answers: updatedAnswers
+          };
+        });
+
+        const hasUpvoted = result.upvotedBy.includes(currentUser.uid);
+        toast({
+          title: hasUpvoted ? "Answer upvoted" : "Upvote removed",
+          description: hasUpvoted 
+            ? "Thank you for your contribution!" 
+            : "Your upvote has been removed.",
+        });
+      }
+    } catch (error) {
+      console.error("Error upvoting answer:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upvote answer. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSubmitAnswer = async () => {
@@ -188,6 +267,15 @@ const PostDetail = () => {
     );
   }
 
+  // Check if the current user has upvoted this post
+  const hasUserUpvotedPost = post && currentUser && post.upvotedBy.includes(currentUser.uid);
+
+  // Determine if user has upvoted an answer
+  const hasUserUpvotedAnswer = (answer: Answer) => {
+    return currentUser && answer.upvotedBy && answer.upvotedBy.includes(currentUser.uid);
+  };
+
+  
   return (
     <div className="container mx-auto py-6 px-4">
       <div className="max-w-4xl mx-auto">
@@ -237,13 +325,14 @@ const PostDetail = () => {
                 ))}
               </div>
               <Button 
-                variant="outline" 
+                variant={hasUserUpvotedPost ? "default" : "outline"} 
                 size="sm"
                 className="flex items-center gap-1"
                 onClick={handleUpvote}
+                disabled={upvoting}
               >
                 <ThumbsUp size={16} />
-                Upvote
+                {hasUserUpvotedPost ? "Upvoted" : "Upvote"}
               </Button>
             </CardFooter>
           </Card>
@@ -278,10 +367,15 @@ const PostDetail = () => {
                         <div className="text-sm text-muted-foreground">
                           Answered by {answer.authorName}, {formatDistanceToNow(new Date(answer.createdAt), { addSuffix: true })}
                         </div>
-                        <div className="flex items-center gap-1 text-sm">
+                        <Button 
+                          variant={hasUserUpvotedAnswer(answer) ? "default" : "outline"} 
+                          size="sm"
+                          className="flex items-center gap-1"
+                          onClick={() => handleAnswerUpvote(answer.id)}
+                        >
                           <ThumbsUp size={16} />
                           <span>{answer.upvotes}</span>
-                        </div>
+                        </Button>
                       </CardFooter>
                     </Card>
                   ))}

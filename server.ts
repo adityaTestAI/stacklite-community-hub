@@ -169,7 +169,91 @@ app.delete('/api/posts/:id', async (req, res): Promise<any> => {
   }
 });
 
-// Tags routes
+// Add a new route to handle post upvotes
+app.post('/api/posts/:id/upvote', async (req, res): Promise<any> => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    const post = await PostModel.findById(req.params.id).exec();
+    
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    // Check if user has already upvoted
+    const userIndex = post.upvotedBy.indexOf(userId);
+    
+    if (userIndex === -1) {
+      // User hasn't upvoted yet, add upvote
+      post.upvotedBy.push(userId);
+      post.upvotes += 1;
+    } else {
+      // User already upvoted, remove upvote
+      post.upvotedBy.splice(userIndex, 1);
+      post.upvotes = Math.max(0, post.upvotes - 1); // Ensure upvotes doesn't go below 0
+    }
+    
+    await post.save();
+    
+    res.json({ upvotes: post.upvotes, upvotedBy: post.upvotedBy });
+  } catch (error) {
+    console.error(`Error toggling upvote for post ${req.params.id}:`, error);
+    res.status(500).json({ error: 'Failed to toggle upvote' });
+  }
+});
+
+// Add a similar route for answer upvotes
+app.post('/api/posts/:postId/answers/:answerId/upvote', async (req, res): Promise<any> => {
+  try {
+    const { userId } = req.body;
+    
+    if (!userId) {
+      return res.status(400).json({ error: 'User ID is required' });
+    }
+    
+    const post = await PostModel.findById(req.params.postId).exec();
+    
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    const answer = post.answers.id(req.params.answerId);
+    
+    if (!answer) {
+      return res.status(404).json({ error: 'Answer not found' });
+    }
+    
+    // Initialize upvotedBy array if it doesn't exist
+    if (!answer.upvotedBy) {
+      answer.upvotedBy = [];
+    }
+    
+    // Check if user has already upvoted
+    const userIndex = answer.upvotedBy.indexOf(userId);
+    
+    if (userIndex === -1) {
+      // User hasn't upvoted yet, add upvote
+      answer.upvotedBy.push(userId);
+      answer.upvotes += 1;
+    } else {
+      // User already upvoted, remove upvote
+      answer.upvotedBy.splice(userIndex, 1);
+      answer.upvotes = Math.max(0, answer.upvotes - 1); // Ensure upvotes doesn't go below 0
+    }
+    
+    await post.save();
+    
+    res.json({ upvotes: answer.upvotes, upvotedBy: answer.upvotedBy });
+  } catch (error) {
+    console.error(`Error toggling upvote for answer ${req.params.answerId}:`, error);
+    res.status(500).json({ error: 'Failed to toggle upvote' });
+  }
+});
+
 app.get('/api/tags', async (req, res) => {
   try {
     const tags = await TagModel.find({}).sort({ count: -1 }).exec();

@@ -1,4 +1,3 @@
-
 import { Post as PostType, Answer as AnswerType } from '@/types';
 import { API_BASE_URL } from '@/config'; // Adjust the path as necessary
 
@@ -20,13 +19,15 @@ export async function getAllPosts(): Promise<PostType[]> {
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
+      upvotedBy: post.upvotedBy || [],
       answers: (post.answers || []).map((ans: AnswerType) => ({
         id: ans.id,
         content: ans.content,
         authorId: ans.authorId,
         authorName: ans.authorName,
         createdAt: new Date(ans.createdAt).toISOString(),
-        upvotes: ans.upvotes
+        upvotes: ans.upvotes,
+        upvotedBy: ans.upvotedBy || []
       }))
     }));
   } catch (error) {
@@ -54,17 +55,63 @@ export async function getPostById(id: string): Promise<PostType | null> {
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
+      upvotedBy: post.upvotedBy || [],
       answers: (post.answers || []).map((ans: AnswerType) => ({
         id: ans.id,
         content: ans.content,
         authorId: ans.authorId,
         authorName: ans.authorName,
         createdAt: new Date(ans.createdAt).toISOString(),
-        upvotes: ans.upvotes
+        upvotes: ans.upvotes,
+        upvotedBy: ans.upvotedBy || []
       }))
     };
   } catch (error) {
     console.error(`Error fetching post ${id}:`, error);
+    return null;
+  }
+}
+
+// Toggle upvote on a post
+export async function togglePostUpvote(postId: string, userId: string): Promise<{ upvotes: number, upvotedBy: string[] } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/posts/${postId}/upvote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Error toggling upvote for post ${postId}:`, error);
+    return null;
+  }
+}
+
+// Toggle upvote on an answer
+export async function toggleAnswerUpvote(postId: string, answerId: string, userId: string): Promise<{ upvotes: number, upvotedBy: string[] } | null> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/posts/${postId}/answers/${answerId}/upvote`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ userId }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error ${response.status}`);
+    }
+    
+    return await response.json();
+  } catch (error) {
+    console.error(`Error toggling upvote for answer ${answerId}:`, error);
     return null;
   }
 }
@@ -130,13 +177,15 @@ export async function updatePost(id: string, postData: Partial<PostType>): Promi
       tags: post.tags,
       upvotes: post.upvotes,
       views: post.views,
+      upvotedBy: post.upvotedBy || [],
       answers: (post.answers || []).map((ans: AnswerType) => ({
         id: ans.id,
         content: ans.content,
         authorId: ans.authorId,
         authorName: ans.authorName,
         createdAt: new Date(ans.createdAt).toISOString(),
-        upvotes: ans.upvotes
+        upvotes: ans.upvotes,
+        upvotedBy: ans.upvotedBy || []
       }))
     };
   } catch (error) {

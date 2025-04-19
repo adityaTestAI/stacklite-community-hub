@@ -29,6 +29,7 @@ export interface Post {
   upvotes: number;
   views: number;
   answers: Answer[];
+  upvotedBy: string[]; // Array of user IDs who upvoted
 }
 
 export interface Answer {
@@ -38,6 +39,7 @@ export interface Answer {
   authorName: string;
   createdAt: string;
   upvotes: number;
+  upvotedBy?: string[]; // Array of user IDs who upvoted
 }
 
 export interface Comment {

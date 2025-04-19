@@ -7,6 +7,7 @@ export interface AnswerDocument extends Document {
   authorName: string;
   createdAt: Date;
   upvotes: number;
+  upvotedBy?: string[]; // Array of user IDs who upvoted this answer
 }
 
 export interface IPost extends Document {
@@ -19,6 +20,7 @@ export interface IPost extends Document {
   upvotes: number;
   views: number;
   answers: AnswerDocument[];
+  upvotedBy: string[]; // Array of user IDs who upvoted this post
 }
 
 const AnswerSchema = new Schema({
@@ -41,7 +43,11 @@ const AnswerSchema = new Schema({
   upvotes: {
     type: Number,
     default: 0
-  }
+  },
+  upvotedBy: [{
+    type: String,
+    ref: 'User'
+  }]
 });
 
 const PostSchema = new Schema<IPost>({
@@ -78,7 +84,11 @@ const PostSchema = new Schema<IPost>({
     type: Number,
     default: 0
   },
-  answers: [AnswerSchema]
+  answers: [AnswerSchema],
+  upvotedBy: [{
+    type: String,
+    ref: 'User'
+  }]
 });
 
 const PostModel = mongoose.models.Post || mongoose.model<IPost>("Post", PostSchema);
