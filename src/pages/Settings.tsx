@@ -24,14 +24,16 @@ import {
   updateUserProfile, 
   updateNotificationSettings, 
   updateAppearanceSettings, 
-  createOrUpdateUser 
+  createOrUpdateUser, 
+  updateUserProfileWithImage,
+  deleteUserProfileImage
 } from "@/api/users";
 import { LoaderCircle } from "lucide-react";
+import ImageUpload from "@/components/profile/ImageUpload";
 
 const Settings = () => {
   const { currentUser, loading } = useAuth();
   
-  // If still loading auth state, show loading
   if (loading) {
     return (
       <div className="container mx-auto py-6 px-4">
@@ -43,7 +45,6 @@ const Settings = () => {
     );
   }
 
-  // If not logged in, redirect to home
   if (!currentUser) {
     toast({
       title: "Authentication required",
@@ -67,35 +68,28 @@ const SettingsContent = () => {
   const [compactView, setCompactView] = useState(false);
   const [codeSyntaxHighlighting, setCodeSyntaxHighlighting] = useState(true);
 
-  // Fetch user data from API
   const { data: userData, isLoading: isLoadingUser, isError } = useQuery({
     queryKey: ['user', currentUser?.uid],
     queryFn: () => getUserByUid(currentUser?.uid || ''),
     enabled: !!currentUser?.uid,
   });
 
-  // Use useEffect to handle the success case since we can't use onSuccess directly
   useEffect(() => {
     if (userData) {
-      // Set form values from fetched user data
       setDisplayName(userData.displayName || '');
       setAvatarUrl(userData.photoURL || '');
       
-      // Set notification settings
       if (userData.notificationSettings) {
         setEmailNotifications(userData.notificationSettings.emailNotifications);
         setWeeklyDigest(userData.notificationSettings.weeklyDigest);
         setUpvoteNotifications(userData.notificationSettings.upvoteNotifications);
       }
       
-      // Set appearance settings
       if (userData.appearance) {
-        // Don't set darkMode here, it's managed by ThemeContext
         setCompactView(userData.appearance.compactView);
         setCodeSyntaxHighlighting(userData.appearance.codeSyntaxHighlighting);
       }
     } else if (currentUser && !isLoadingUser) {
-      // Create user if not exists and query has completed but no data returned
       createUserMutation.mutate({
         uid: currentUser.uid,
         email: currentUser.email || '',
@@ -105,7 +99,6 @@ const SettingsContent = () => {
     }
   }, [userData, currentUser, isLoadingUser]);
 
-  // Create user mutation
   const createUserMutation = useMutation({
     mutationFn: createOrUpdateUser,
     onSuccess: () => {
@@ -123,12 +116,10 @@ const SettingsContent = () => {
     }
   });
 
-  // Profile update mutation
   const profileMutation = useMutation({
     mutationFn: (data: { displayName: string; photoURL: string }) => 
       updateUserProfile(currentUser?.uid || '', data),
     onSuccess: () => {
-      // Also update Firebase profile
       if (auth.currentUser) {
         updateProfile(auth.currentUser, {
           displayName,
@@ -150,7 +141,6 @@ const SettingsContent = () => {
     }
   });
 
-  // Notification settings mutation
   const notificationMutation = useMutation({
     mutationFn: (settings: Partial<{ emailNotifications: boolean; weeklyDigest: boolean; upvoteNotifications: boolean }>) => 
       updateNotificationSettings(currentUser?.uid || '', settings),
@@ -169,7 +159,6 @@ const SettingsContent = () => {
     }
   });
 
-  // Appearance settings mutation
   const appearanceMutation = useMutation({
     mutationFn: (settings: Partial<{ darkMode: boolean; compactView: boolean; codeSyntaxHighlighting: boolean }>) => 
       updateAppearanceSettings(currentUser?.uid || '', settings),
@@ -187,6 +176,35 @@ const SettingsContent = () => {
       });
     }
   });
+
+  const handleImageUpload = async (file: File) => {
+    if (!currentUser?.uid) return;
+    
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const updatedUser = await updateUserProfileWithImage(currentUser.uid, formData);
+    if (updatedUser) {
+      if (auth.currentUser) {
+        updateProfile(auth.currentUser, {
+          photoURL: updatedUser.photoURL
+        });
+      }
+    }
+  };
+
+  const handleImageDelete = async () => {
+    if (!currentUser?.uid) return;
+    
+    const updatedUser = await deleteUserProfileImage(currentUser.uid);
+    if (updatedUser) {
+      if (auth.currentUser) {
+        updateProfile(auth.currentUser, {
+          photoURL: null
+        });
+      }
+    }
+  };
 
   const handleUpdateProfile = () => {
     profileMutation.mutate({ 
@@ -290,26 +308,12 @@ const SettingsContent = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                  <Avatar className="w-20 h-20">
-                    <AvatarImage src={avatarUrl || undefined} />
-                    <AvatarFallback>
-                      {currentUser?.displayName?.charAt(0) || currentUser?.email?.charAt(0) || "U"}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 space-y-1">
-                    <Label htmlFor="avatar-url">Avatar URL</Label>
-                    <Input
-                      id="avatar-url"
-                      value={avatarUrl || ""}
-                      onChange={(e) => setAvatarUrl(e.target.value)}
-                      placeholder="https://example.com/avatar.jpg"
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Enter a URL for your profile picture
-                    </p>
-                  </div>
-                </div>
+                <ImageUpload
+                  currentImage={avatarUrl}
+                  displayName={displayName}
+                  onImageUpload={handleImageUpload}
+                  onImageDelete={handleImageDelete}
+                />
                 
                 <div className="space-y-2">
                   <Label htmlFor="display-name">Display Name</Label>

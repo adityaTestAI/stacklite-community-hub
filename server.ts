@@ -6,6 +6,9 @@ import { connectToDatabase } from './src/lib/mongodb.js';
 import PostModel from './src/models/Post.js';
 import TagModel from './src/models/Tag.js';
 import UserModel from './src/models/User.js';
+import multer from 'multer';
+import path from 'path';
+import fs from 'fs';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,6 +40,35 @@ const corsOptions = {
 // Middleware
 app.use(cors(corsOptions));
 app.use(express.json()); // Add this line to parse JSON request bodies
+
+// Configure multer for image upload
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    const uploadDir = 'uploads/';
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir);
+    }
+    cb(null, uploadDir);
+  },
+  filename: function (req, file, cb) {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  }
+});
+
+const upload = multer({ 
+  storage: storage,
+  limits: {
+    fileSize: 2 * 1024 * 1024 // 2MB
+  },
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif'];
+    if (!allowedTypes.includes(file.mimetype)) {
+      cb(new Error('Invalid file type'));
+      return;
+    }
+    cb(null, true);
+  }
+});
 
 // Connect to database
 async function initializeDatabase() {
@@ -441,6 +473,61 @@ app.patch('/api/users/:uid/appearance', async (req, res): Promise<any> => {
   } catch (error) {
     console.error(`Error updating appearance settings for user ${req.params.uid}:`, error);
     res.status(500).json({ error: 'Failed to update appearance settings' });
+  }
+});
+
+// Add image upload route
+app.post('/api/users/:uid/profile/image', upload.single('image'), async (req, res): Promise<any> => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const user = await UserModel.findOneAndUpdate(
+      { uid: req.params.uid },
+      { 
+        photoURL: `/uploads/${req.file.filename}`,
+        updatedAt: new Date()
+      },
+      { new: true }
+    ).exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error(`Error uploading profile image for user ${req.params.uid}:`, error);
+    res.status(500).json({ error: 'Failed to upload profile image' });
+  }
+});
+
+// Add image delete route
+app.delete('/api/users/:uid/profile/image', async (req, res): Promise<any> => {
+  try {
+    const user = await UserModel.findOne({ uid: req.params.uid }).exec();
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Delete the old image file if it exists
+    if (user.photoURL) {
+      const imagePath = path.join(__dirname, user.photoURL);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+    
+    user.photoURL = null;
+    user.updatedAt = new Date();
+    await user.save();
+    
+    res.json(user);
+  } catch (error) {
+    console.error(`Error deleting profile image for user ${req.params.uid}:`, error);
+    res.status(500).json({ error: 'Failed to delete profile image' });
   }
 });
 
