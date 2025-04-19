@@ -1,34 +1,50 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import express from 'express';
 import cors from 'cors';
-import { connectToDatabase } from './src/lib/mongodb';
-import PostModel from './src/models/Post';
-import TagModel from './src/models/Tag';
-import UserModel from './src/models/User';
+import { connectToDatabase } from './src/lib/mongodb.js';
+import PostModel from './src/models/Post.js';
+import TagModel from './src/models/Tag.js';
+import UserModel from './src/models/User.js';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:8080', 'https://localhost:8080', 'http://localhost:5173'], // Add Vite's default port
-  credentials: true
-}));
-app.use(express.json());
+const allowedOrigins = [
+  'http://localhost:5173',  // Vite default port
+  'http://localhost:8082',
+  'http://localhost:8080',
+  'http://localhost:3000',
+  'https://stack-lite.netlify.app',  // Production Netlify frontend
+  'https://stack-overflowr.onrender.com'
+].filter(Boolean);
+
+const corsOptions = {
+  origin: function (origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn('Origin not allowed by CORS:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+
+// Middleware
+app.use(cors(corsOptions));
+app.use(express.json()); // Add this line to parse JSON request bodies
 
 // Connect to database
 async function initializeDatabase() {
   try {
-    console.log('Connecting to database...');
-    const connection = await connectToDatabase();
-    
-    if (connection) {
-      console.log('Connected to MongoDB');
-    } else {
-      console.log('Failed to get MongoDB connection');
-    }
+    await connectToDatabase();
+    console.log("✅ MongoDB connection established. Starting server...");
   } catch (error) {
-    console.error('Failed to connect to MongoDB:', error);
+    console.error("❌ Failed to get MongoDB connection");
   }
 }
 
@@ -51,7 +67,7 @@ app.get('/api/posts', async (req, res) => {
   }
 });
 
-app.get('/api/posts/:id', async (req, res) => {
+app.get('/api/posts/:id', async (req, res): Promise<any> => {
   try {
     const post = await PostModel.findById(req.params.id).exec();
     
@@ -59,8 +75,8 @@ app.get('/api/posts/:id', async (req, res) => {
       return res.status(404).json({ error: 'Post not found' });
     }
     
-    // Increment view count
-    post.views += 1;
+    // Increment view count (ensure views is a number)
+    post.views = (post.views || 0) + 1;
     await post.save();
     
     res.json(post);
@@ -105,7 +121,7 @@ app.post('/api/posts', async (req, res) => {
   }
 });
 
-app.patch('/api/posts/:id', async (req, res) => {
+app.patch('/api/posts/:id', async (req, res): Promise<any> => {
   try {
     const updateData = req.body;
     
@@ -138,7 +154,7 @@ app.patch('/api/posts/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/posts/:id', async (req, res) => {
+app.delete('/api/posts/:id', async (req, res): Promise<any> => {
   try {
     const result = await PostModel.findByIdAndDelete(req.params.id).exec();
     
@@ -164,7 +180,7 @@ app.get('/api/tags', async (req, res) => {
   }
 });
 
-app.get('/api/tags/:name', async (req, res) => {
+app.get('/api/tags/:name', async (req, res): Promise<any> => {
   try {
     const tag = await TagModel.findOne({ name: req.params.name.toLowerCase() }).exec();
     
@@ -193,6 +209,7 @@ app.post('/api/tags', async (req, res) => {
       ).exec();
       
       results.push(tag);
+
     }
     
     res.status(201).json(results);
@@ -202,7 +219,7 @@ app.post('/api/tags', async (req, res) => {
   }
 });
 
-app.delete('/api/tags/:id', async (req, res) => {
+app.delete('/api/tags/:id', async (req, res): Promise<any> => {
   try {
     const result = await TagModel.findByIdAndDelete(req.params.id).exec();
     
@@ -218,7 +235,7 @@ app.delete('/api/tags/:id', async (req, res) => {
 });
 
 // User routes
-app.get('/api/users/:uid', async (req, res) => {
+app.get('/api/users/:uid', async (req, res): Promise<any> => {
   try {
     const user = await UserModel.findOne({ uid: req.params.uid }).exec();
     
@@ -233,7 +250,7 @@ app.get('/api/users/:uid', async (req, res) => {
   }
 });
 
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', async (req, res): Promise<any> => {
   try {
     const { uid, email, displayName, photoURL } = req.body;
     
@@ -260,7 +277,7 @@ app.post('/api/users', async (req, res) => {
   }
 });
 
-app.patch('/api/users/:uid/profile', async (req, res) => {
+app.patch('/api/users/:uid/profile', async (req, res): Promise<any> => {
   try {
     const { displayName, photoURL } = req.body;
     
@@ -285,7 +302,7 @@ app.patch('/api/users/:uid/profile', async (req, res) => {
   }
 });
 
-app.patch('/api/users/:uid/notifications', async (req, res) => {
+app.patch('/api/users/:uid/notifications', async (req, res): Promise<any> => {
   try {
     const settings = req.body;
     
@@ -314,7 +331,7 @@ app.patch('/api/users/:uid/notifications', async (req, res) => {
   }
 });
 
-app.patch('/api/users/:uid/appearance', async (req, res) => {
+app.patch('/api/users/:uid/appearance', async (req, res): Promise<any> => {
   try {
     const settings = req.body;
     
@@ -343,9 +360,12 @@ app.patch('/api/users/:uid/appearance', async (req, res) => {
   }
 });
 
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Error:', err);
+  res.status(500).json({ message: 'Internal server error', error: err.message });
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
-
-export default app;
