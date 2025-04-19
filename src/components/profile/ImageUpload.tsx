@@ -1,9 +1,20 @@
-
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Upload } from "lucide-react";
+import { Trash2, Upload, Loader2 } from "lucide-react";
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { API_BASE_URL } from '@/config';
 
 interface ImageUploadProps {
   currentImage: string | null;
@@ -24,6 +35,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [imagePreview, setImagePreview] = useState<string | null>(currentImage);
+
+  React.useEffect(() => {
+    setImagePreview(currentImage);
+  }, [currentImage]);
+
+  const getImageUrl = (url: string | null) => {
+    if (!url) return undefined;
+    if (url.startsWith('http') || url.startsWith('data:')) return url;
+    return `${API_BASE_URL}${url}`;
+  };
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -47,6 +69,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
       return;
     }
 
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setImagePreview(e.target?.result as string);
+    };
+    reader.readAsDataURL(file);
+
     try {
       setIsUploading(true);
       await onImageUpload(file);
@@ -55,6 +83,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         description: "Profile image updated successfully",
       });
     } catch (error) {
+      setImagePreview(currentImage);
       toast({
         title: "Error",
         description: "Failed to upload image",
@@ -69,6 +98,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     try {
       setIsDeleting(true);
       await onImageDelete();
+      setImagePreview(null);
       toast({
         title: "Success",
         description: "Profile image removed successfully",
@@ -86,8 +116,13 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
   return (
     <div className="flex flex-col items-center space-y-4">
-      <Avatar className="w-32 h-32 cursor-pointer hover:opacity-90 transition-opacity">
-        <AvatarImage src={currentImage || undefined} />
+      <Avatar className="w-32 h-32 cursor-pointer hover:opacity-90 transition-opacity relative">
+        {isUploading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/70 rounded-full z-10">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        )}
+        <AvatarImage src={getImageUrl(imagePreview) || undefined} />
         <AvatarFallback className="text-2xl">
           {displayName?.charAt(0).toUpperCase() || "U"}
         </AvatarFallback>
@@ -104,16 +139,33 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           {isUploading ? "Uploading..." : "Upload Image"}
         </Button>
 
-        {currentImage && (
-          <Button
-            onClick={handleDeleteClick}
-            disabled={isDeleting}
-            variant="destructive"
-            className="flex items-center gap-2"
-          >
-            <Trash2 className="h-4 w-4" />
-            {isDeleting ? "Removing..." : "Remove"}
-          </Button>
+        {imagePreview && (
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="destructive"
+                className="flex items-center gap-2"
+                disabled={isDeleting}
+              >
+                <Trash2 className="h-4 w-4" />
+                {isDeleting ? "Removing..." : "Remove"}
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will remove your profile image. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDeleteClick}>
+                  Remove Image
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         )}
       </div>
 

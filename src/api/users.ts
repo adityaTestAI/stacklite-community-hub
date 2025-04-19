@@ -1,3 +1,4 @@
+
 import { User as UserType } from '@/types';
 import { API_BASE_URL } from '@/config';
 
@@ -169,7 +170,7 @@ export async function updateUserProfileWithImage(uid: string, formData: FormData
     };
   } catch (error) {
     console.error(`Error updating user profile image ${uid}:`, error);
-    return null;
+    throw error; // Re-throw error instead of returning null, so it can be handled by the component
   }
 }
 
@@ -195,6 +196,6 @@ export async function deleteUserProfileImage(uid: string): Promise<UserType | nu
     };
   } catch (error) {
     console.error(`Error deleting user profile image ${uid}:`, error);
-    return null;
+    throw error; // Re-throw error instead of returning null, so it can be handled by the component
   }
 }
