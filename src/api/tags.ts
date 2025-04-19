@@ -1,7 +1,7 @@
 
 import { Tag as TagType } from '@/types';
 
-const API_BASE_URL = 'http://localhost:3000/api';
+import { API_BASE_URL } from '@/config'
 
 // Get all tags
 export async function getAllTags(): Promise<TagType[]> {
@@ -11,7 +11,7 @@ export async function getAllTags(): Promise<TagType[]> {
       throw new Error(`HTTP error ${response.status}`);
     }
     const data = await response.json();
-    return data.map((tag: any) => ({
+    return data.map((tag: { _id?: string; id?: string; name: string; count: number }) => ({
       id: tag._id || tag.id,
       name: tag.name,
       count: tag.count
@@ -58,7 +58,7 @@ export async function createOrUpdateTags(tagNames: string[]): Promise<TagType[]>
     }
     
     const data = await response.json();
-    return data.map((tag: any) => ({
+    return data.map((tag: { _id?: string; id?: string; name: string; count: number }) => ({
       id: tag._id || tag.id,
       name: tag.name,
       count: tag.count
