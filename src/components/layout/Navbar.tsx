@@ -39,7 +39,7 @@ import { useToast } from "@/hooks/use-toast";
 import AuthModal from "@/components/auth/AuthModal";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion, AnimatePresence } from "framer-motion";
-import "../styles/theme-toggle.css";
+import "@/styles/theme-toggle.css";
 
 const Navbar: React.FC = () => {
   const { currentUser } = useAuth();
