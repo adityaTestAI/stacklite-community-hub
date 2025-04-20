@@ -87,7 +87,7 @@ const Posts = () => {
     
     const filteredPosts = tagFilter 
       ? posts.filter(post => post.tags.includes(tagFilter))
-      : posts;
+      : [...posts];
       
     switch (sortType) {
       case "newest":

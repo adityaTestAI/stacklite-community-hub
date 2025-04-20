@@ -38,7 +38,8 @@ import { auth, signOut } from "@/lib/firebase";
 import { useToast } from "@/hooks/use-toast";
 import AuthModal from "@/components/auth/AuthModal";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import "../styles/theme-toggle.css";
 
 const Navbar: React.FC = () => {
   const { currentUser } = useAuth();
@@ -115,16 +116,36 @@ const Navbar: React.FC = () => {
             size="icon"
             onClick={toggleTheme}
             disabled={themeLoading}
-            className="rounded-full"
+            className="rounded-full overflow-hidden"
             aria-label={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
           >
-            {themeLoading ? (
-              <span className="animate-pulse">...</span>
-            ) : theme === 'dark' ? (
-              <Sun size={18} />
-            ) : (
-              <Moon size={18} />
-            )}
+            <AnimatePresence mode="wait">
+              {themeLoading ? (
+                <span className="animate-pulse">...</span>
+              ) : theme === 'dark' ? (
+                <motion.div
+                  key="moon"
+                  initial={{ rotate: 0 }}
+                  animate={{ rotate: 360 }}
+                  exit={{ rotate: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="theme-toggle-icon"
+                >
+                  <Sun size={18} />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="sun"
+                  initial={{ rotate: 0 }}
+                  animate={{ rotate: 360 }}
+                  exit={{ rotate: 0 }}
+                  transition={{ duration: 0.5 }}
+                  className="theme-toggle-icon"
+                >
+                  <Moon size={18} />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Button>
           
           <Button 
@@ -204,7 +225,6 @@ const Navbar: React.FC = () => {
         </div>
       </div>
       
-      {/* Mobile menu */}
       {isMobile && mobileMenuOpen && (
         <motion.div 
           initial={{ opacity: 0, height: 0 }}

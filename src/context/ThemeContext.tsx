@@ -3,6 +3,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { useAuth } from "./AuthContext";
 import { getUserByUid, updateAppearanceSettings } from "@/api/users";
 import { useToast } from "@/hooks/use-toast";
+import "../styles/theme-toggle.css";
 
 type ThemeType = "dark" | "light" | "system";
 
@@ -68,35 +69,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const applyThemeToDOM = (newTheme: ThemeType) => {
     const root = document.documentElement;
     
-    if (newTheme === "dark") {
-      root.classList.add("theme-transition");
-      root.classList.add("dark");
-      
-      setTimeout(() => {
-        root.classList.remove("theme-transition");
-      }, 500);
-    } else {
-      root.classList.add("theme-transition");
-      root.classList.remove("dark");
-      
-      setTimeout(() => {
-        root.classList.remove("theme-transition");
-      }, 500);
-    }
-
-    // Add transition styles in javascript to avoid them being always applied
-    const style = document.createElement('style');
-    style.id = 'theme-transition-style';
-    style.textContent = `
-      .theme-transition * {
-        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
-      }
-    `;
+    // Add the transition class before changing the theme
+    root.classList.add("theme-transition");
     
-    const existingStyle = document.getElementById('theme-transition-style');
-    if (!existingStyle) {
-      document.head.appendChild(style);
+    if (newTheme === "dark") {
+      root.classList.add("dark");
+    } else {
+      root.classList.remove("dark");
     }
+    
+    // Remove the transition class after the transition completes
+    setTimeout(() => {
+      root.classList.remove("theme-transition");
+    }, 500);
   };
 
   const setTheme = async (newTheme: ThemeType) => {

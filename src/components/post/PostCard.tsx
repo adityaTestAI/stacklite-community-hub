@@ -33,9 +33,9 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
       </div>
       
       {/* Content */}
-      <div className="flex-1">
+      <div className="flex-1 min-w-0">
         <Link to={`/posts/${post.id}`} className="group">
-          <h2 className="text-xl font-semibold group-hover:text-orange-500 transition-colors mb-2">
+          <h2 className="text-xl font-semibold group-hover:text-orange-500 transition-colors mb-2 line-clamp-2">
             {post.title}
           </h2>
         </Link>
@@ -44,22 +44,22 @@ const PostCard: React.FC<PostCardProps> = ({ post }) => {
           {post.content}
         </p>
         
-        <div className="flex items-center justify-between">
-          <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col xs:flex-row xs:items-center xs:justify-between gap-3">
+          <div className="flex flex-wrap gap-1.5 max-w-full overflow-hidden">
             {post.tags.map((tag) => (
               <TagBadge
                 key={tag}
                 name={tag}
-                className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700"
+                className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 text-xs py-0.5 px-2 max-w-[120px]"
               >
-                <TagIcon tagName={tag} className="h-3 w-3 mr-1" />
-                {tag}
+                <TagIcon tagName={tag} className="h-3 w-3 mr-1 flex-shrink-0" />
+                <span className="truncate">{tag}</span>
               </TagBadge>
             ))}
           </div>
           
-          <div className="text-sm text-muted-foreground">
-            <span>Asked by {post.authorName} </span>
+          <div className="text-sm text-muted-foreground text-right whitespace-nowrap">
+            <span className="block xs:inline">Asked by {post.authorName} </span>
             <span>{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</span>
           </div>
         </div>
