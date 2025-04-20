@@ -1,38 +1,58 @@
 
-import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
+import { AnimatePresence } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Footer from "@/components/layout/Footer";
-import Index from "@/pages/Index";
-import Posts from "@/pages/Posts";
-import PostDetail from "@/pages/PostDetail";
-import AskQuestion from "@/pages/AskQuestion";
-import Login from "@/pages/Login";
-import Settings from "@/pages/Settings";
-import NotFound from "@/pages/NotFound";
-import Tags from "@/pages/Tags";
-import "./App.css";
-import "./styles/theme-toggle.css";
+import ParticlesBackground from "@/components/ui/ParticlesBackground";
+import Index from "./pages/Index";
+import Posts from "./pages/Posts";
+import Tags from "./pages/Tags";
+import PostDetail from "./pages/PostDetail";
+import Settings from "./pages/Settings";
+import NotFound from "./pages/NotFound";
+import AskQuestion from "./pages/AskQuestion";
+import Login from "./pages/Login";
 
-function App() {
-  return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <Navbar />
-      <div className="flex-1">
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/posts" element={<Posts />} />
-          <Route path="/posts/:id" element={<PostDetail />} />
-          <Route path="/posts/ask" element={<AskQuestion />} />
-          <Route path="/tags" element={<Tags />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </div>
-      <Footer />
-    </div>
-  );
-}
+const queryClient = new QueryClient();
+
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <div className="flex flex-col min-h-screen">
+              <ParticlesBackground />
+              <Navbar />
+              <main className="flex-1">
+                <AnimatePresence mode="wait">
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    <Route path="/posts" element={<Posts />} />
+                    <Route path="/posts/:postId" element={<PostDetail />} />
+                    <Route path="/posts/ask" element={<AskQuestion />} />
+                    <Route path="/tags" element={<Tags />} />
+                    <Route path="/settings" element={<Settings />} />
+                    <Route path="/login" element={<Login />} />
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </AnimatePresence>
+              </main>
+              <Footer />
+            </div>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
+    </AuthProvider>
+  </QueryClientProvider>
+);
 
 export default App;
