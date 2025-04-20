@@ -66,10 +66,36 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [currentUser]);
 
   const applyThemeToDOM = (newTheme: ThemeType) => {
+    const root = document.documentElement;
+    
     if (newTheme === "dark") {
-      document.documentElement.classList.add("dark");
+      root.classList.add("theme-transition");
+      root.classList.add("dark");
+      
+      setTimeout(() => {
+        root.classList.remove("theme-transition");
+      }, 500);
     } else {
-      document.documentElement.classList.remove("dark");
+      root.classList.add("theme-transition");
+      root.classList.remove("dark");
+      
+      setTimeout(() => {
+        root.classList.remove("theme-transition");
+      }, 500);
+    }
+
+    // Add transition styles in javascript to avoid them being always applied
+    const style = document.createElement('style');
+    style.id = 'theme-transition-style';
+    style.textContent = `
+      .theme-transition * {
+        transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease !important;
+      }
+    `;
+    
+    const existingStyle = document.getElementById('theme-transition-style');
+    if (!existingStyle) {
+      document.head.appendChild(style);
     }
   };
 

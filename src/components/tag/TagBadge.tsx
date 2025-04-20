@@ -20,8 +20,8 @@ const TagBadge: React.FC<TagBadgeProps> = ({
   return (
     <button
       className={cn(
-        "inline-flex items-center justify-center rounded-full px-2.5 py-0.5 text-xs font-medium transition-colors",
-        "bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400",
+        "inline-flex items-center justify-center rounded-full px-3 py-1 text-xs font-medium transition-colors",
+        "bg-slate-200 text-slate-700 hover:bg-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700",
         onClick && "cursor-pointer", 
         className
       )}

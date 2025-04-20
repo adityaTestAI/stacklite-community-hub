@@ -7,6 +7,7 @@ import { Post, Tag } from "@/types";
 import { Search, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface PostsListProps {
   posts: Post[];
@@ -23,6 +24,7 @@ const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const location = useLocation();
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
 
   // Extract tag from URL query parameter on component mount
   useEffect(() => {
@@ -76,84 +78,89 @@ const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
         <Input
           className="pl-10"
-          placeholder="Search posts..."
+          placeholder="Search questions..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
         />
       </motion.div>
       
-      {selectedTags.length > 0 ? (
-        <motion.div 
-          variants={item}
-          className="space-y-2"
-        >
-          <div className="flex justify-between items-center">
-            <h3 className="text-sm font-medium">Selected Tags</h3>
-            <button 
-              onClick={clearAllTags}
-              className="text-xs text-muted-foreground hover:text-foreground"
+      {/* Only show tags on mobile, as desktop has its own sidebar for tags */}
+      {isMobile && (
+        <>
+          {selectedTags.length > 0 ? (
+            <motion.div 
+              variants={item}
+              className="space-y-2"
             >
-              Clear all
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {selectedTags.map((tag) => {
-              const tagObj = popularTags.find(t => t.name === tag) || { id: tag, name: tag, count: 0 };
-              return (
-                <motion.div 
-                  key={tagObj.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
+              <div className="flex justify-between items-center">
+                <h3 className="text-sm font-medium">Selected Tags</h3>
+                <button 
+                  onClick={clearAllTags}
+                  className="text-xs text-muted-foreground hover:text-foreground"
                 >
-                  <TagBadge
-                    key={tagObj.id}
-                    name={tagObj.name}
-                    count={tagObj.count}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    onClick={() => handleTagClick(tagObj.name)}
-                  >
-                    <span className="flex items-center gap-1">
-                      {tagObj.name}
-                      <X size={14} />
-                    </span>
-                  </TagBadge>
-                </motion.div>
-              );
-            })}
-          </div>
-        </motion.div>
-      ) : (
-        popularTags.length > 0 && (
-          <motion.div 
-            variants={item}
-            className="space-y-2"
-          >
-            <h3 className="text-sm font-medium">Popular Tags</h3>
-            <div className="flex flex-wrap gap-2">
-              {popularTags.map((tag) => (
-                <motion.div 
-                  key={tag.id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.2 }}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <TagBadge
-                    key={tag.id}
-                    name={tag.name}
-                    count={tag.count}
-                    className={selectedTags.includes(tag.name) ? "bg-primary text-primary-foreground hover:bg-primary/90" : ""}
-                    onClick={() => handleTagClick(tag.name)}
-                  />
-                </motion.div>
-              ))}
-            </div>
-          </motion.div>
-        )
+                  Clear all
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selectedTags.map((tag) => {
+                  const tagObj = popularTags.find(t => t.name === tag) || { id: tag, name: tag, count: 0 };
+                  return (
+                    <motion.div 
+                      key={tagObj.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <TagBadge
+                        key={tagObj.id}
+                        name={tagObj.name}
+                        count={tagObj.count}
+                        className="bg-orange-500 text-white hover:bg-orange-600"
+                        onClick={() => handleTagClick(tagObj.name)}
+                      >
+                        <span className="flex items-center gap-1">
+                          {tagObj.name}
+                          <X size={14} />
+                        </span>
+                      </TagBadge>
+                    </motion.div>
+                  );
+                })}
+              </div>
+            </motion.div>
+          ) : (
+            popularTags.length > 0 && (
+              <motion.div 
+                variants={item}
+                className="space-y-2"
+              >
+                <h3 className="text-sm font-medium">Popular Tags</h3>
+                <div className="flex flex-wrap gap-2">
+                  {popularTags.map((tag) => (
+                    <motion.div 
+                      key={tag.id}
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.2 }}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <TagBadge
+                        key={tag.id}
+                        name={tag.name}
+                        count={tag.count}
+                        className={selectedTags.includes(tag.name) ? "bg-orange-500 text-white hover:bg-orange-600" : ""}
+                        onClick={() => handleTagClick(tag.name)}
+                      />
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )
+          )}
+        </>
       )}
       
       <motion.div 
@@ -178,7 +185,7 @@ const PostsList: React.FC<PostsListProps> = ({ posts, popularTags }) => {
             transition={{ delay: 0.3 }}
             className="text-center py-10"
           >
-            <h3 className="text-lg font-medium mb-2">No posts found</h3>
+            <h3 className="text-lg font-medium mb-2">No questions found</h3>
             <p className="text-muted-foreground">
               Try adjusting your search or filter to find what you're looking for.
             </p>
