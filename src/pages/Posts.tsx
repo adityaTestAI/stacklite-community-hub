@@ -112,8 +112,9 @@ const Posts = () => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="container mx-auto py-6 px-4"
+      className="container mx-auto py-6 px-4 max-w-7xl"
     >
+      {/* Header Section */}
       <div className="mb-8">
         <motion.h1
           initial={{ opacity: 0, x: -20 }}
@@ -148,8 +149,10 @@ const Posts = () => {
         )}
       </div>
       
-      <div className="flex flex-col md:flex-row gap-6">
-        <div className="flex-1">
+      {/* Main Content Area - Responsive Layout */}
+      <div className="flex flex-col-reverse md:flex-row gap-6">
+        {/* Posts List Section */}
+        <div className="flex-1 min-w-0">
           {isLoadingPosts || isLoadingTags ? (
             <div className="flex justify-center py-20">
               <div className="flex flex-col items-center">
@@ -234,15 +237,15 @@ const Posts = () => {
           )}
         </div>
         
-        {/* Sidebar for tags - only visible on desktop */}
+        {/* Tags Sidebar - Responsive */}
         {!isMobile && (
           <motion.div 
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
-            className="hidden md:block w-80 shrink-0"
+            className="md:w-80 shrink-0"
           >
-            <div className="bg-card rounded-lg p-6 shadow-sm">
+            <div className="bg-card rounded-lg p-6 shadow-sm sticky top-6">
               <h3 className="text-xl font-bold mb-4">Popular Tags</h3>
               <div className="flex flex-wrap gap-2">
                 {tags.map((tag) => (
